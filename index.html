@@ -499,6 +499,17 @@ dialog.lb::backdrop{background:rgba(5,10,8,.88)}
 .rescue-row .rr-sum{font-size:.8rem;margin:2px 0 8px}
 .rescue-row .rr-act{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
 .rescue-row select{background:var(--surface);color:var(--text);border:1px solid var(--line);border-radius:8px;padding:6px 8px;font:inherit;font-size:.85rem}
+.sync-state{display:inline-flex;align-items:center;gap:7px;font-size:.78rem;color:var(--muted);margin-top:10px}
+.sync-state .sd{width:9px;height:9px;border-radius:50%;background:#9aa0a6;flex:none;transition:background .2s}
+.sync-state[data-s="ok"] .sd{background:#27a25b}
+.sync-state[data-s="sync"] .sd{background:#e0a32e;animation:sdp 1s infinite}
+.sync-state[data-s="err"] .sd{background:#cf4a3a}
+.sync-state[data-s="off"] .sd{background:#9aa0a6}
+@keyframes sdp{50%{opacity:.25}}
+.sync-state.mini{margin:0 6px 0 0}
+.sync-state.mini .st{display:none}
+@media(min-width:760px){.sync-state.mini .st{display:inline}}
+.cloud-warn{display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:var(--surface-2);border:1px solid var(--line);border-left:3px solid #e0a32e;border-radius:10px;padding:9px 12px;font-size:.88rem;margin:0 0 10px}
 .exit-btn{background:none;border:1px solid var(--line);border-radius:8px;width:38px;height:38px;display:grid;place-items:center;cursor:pointer;color:var(--muted)}
 .exit-btn:hover{color:var(--text);border-color:var(--line-strong)}
 </style>
@@ -530,6 +541,7 @@ dialog.lb::backdrop{background:rgba(5,10,8,.88)}
       <p id="gatePlayerHint"></p>
     </div>
     <button class="gate-admin-link" id="clubAdminLink">Administrador de perfiles</button>
+    <div class="sync-state" id="syncStateGate"><span class="sd"></span><span class="st">Sin sincronizacion</span></div>
   </div>
 </div>
 
@@ -547,6 +559,7 @@ dialog.lb::backdrop{background:rgba(5,10,8,.88)}
     <div id="modslot"></div>
     <div class="swatches" role="group" aria-label="Superficie" id="swatches"></div>
     <button class="theme-btn" id="themeBtn" aria-label="Cambiar entre modo claro y oscuro"><svg class="i" viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></svg></button>
+    <span class="sync-state mini" id="syncStateApp" title="Estado de la sincronizacion"><span class="sd"></span><span class="st"></span></span>
     <button class="exit-btn" id="switchClubBtn" aria-label="Salir" title="Salir"><svg class="i" viewBox="0 0 24 24"><path d="M15 3h4a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1h-4M10 17l5-5-5-5M15 12H3"/></svg></button>
   </div>
 </header>
@@ -574,11 +587,173 @@ dialog.lb::backdrop{background:rgba(5,10,8,.88)}
 </dialog>
 </div>
 
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+
 <script>
 /* =====================================================================
    DATOS POR DEFECTO (todo esto se puede editar desde "Ingreso administrador")
    ===================================================================== */
 const ADMIN_PASS = "100";
+
+/* =====================================================================
+   SINCRONIZACION EN LA NUBE (Firebase / Firestore)
+   ---------------------------------------------------------------------
+   Pega aca los datos del proyecto de Firebase. Mientras projectId este
+   vacio, la app funciona igual que siempre, solo con este navegador.
+   ===================================================================== */
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyDnMvhfeYD_fBoPvpNloi2UUeHgIza-xJs",
+  authDomain: "torneotenis-fcda0.firebaseapp.com",
+  projectId: "torneotenis-fcda0",
+  storageBucket: "torneotenis-fcda0.firebasestorage.app",
+  messagingSenderId: "245986642738",
+  appId: "1:245986642738:web:4c902e38dcd8b257b6e52b"
+};
+/* Cada club se guarda en Firestore asi:
+     clubes/{idClub}            -> { nombre, escudo, clave, parts, rev, updatedAt }
+     clubes/{idClub}/data/p0..N -> { s: "pedazo del JSON" }
+   Se parte en pedazos porque un documento de Firestore no puede pasar 1 MB
+   y las fotos pesan. Cada club es un documento aparte: sigue todo separado. */
+const CHUNK = 400000;
+let fdb = null, cloudOK = false, cloudErr = "", applyingCloud = false;
+let unsubClubes = null, unsubData = null, pendingCloudRev = null;
+
+function setSync(estado, texto){
+  ["syncStateGate","syncStateApp"].forEach(id=>{
+    const el = document.getElementById(id); if(!el) return;
+    el.dataset.s = estado; const t = el.querySelector(".st"); if(t) t.textContent = texto;
+    el.title = texto;
+  });
+}
+const cloudOn = () => cloudOK && fdb;
+
+async function cloudInit(){
+  if(!FIREBASE_CONFIG.projectId){ setSync("off","Solo en este dispositivo"); return; }
+  if(typeof firebase === "undefined"){ setSync("err","Sin conexion"); return; }
+  try{
+    setSync("sync","Conectando...");
+    firebase.initializeApp(FIREBASE_CONFIG);
+    fdb = firebase.firestore();
+    try{ await firebase.auth().signInAnonymously(); }catch(e){ /* si las reglas son abiertas, sigue igual */ }
+    cloudOK = true;
+    setSync("ok","Sincronizado");
+    cloudWatchClubes();
+  }catch(e){ cloudErr = String(e && e.message || e); cloudOK = false; setSync("err","Sin sincronizacion"); }
+}
+
+/* ---- Lista de clubes: se mantiene igual en todos los dispositivos ---- */
+function cloudWatchClubes(){
+  if(!cloudOn()) return;
+  if(unsubClubes) { try{ unsubClubes(); }catch(e){} }
+  unsubClubes = fdb.collection("clubes").onSnapshot(snap=>{
+    const remotos = [];
+    snap.forEach(d=>{ const v=d.data()||{}; remotos.push({id:d.id, nombre:v.nombre||"Club", escudo:v.escudo||"", clave:String(v.clave||"")}); });
+    applyingCloud = true;
+    try{ localStorage.setItem("liga_clubes", JSON.stringify(remotos)); }catch(e){}
+    applyingCloud = false;
+    if(document.getElementById("gateRoot").style.display !== "none") renderGate();
+    if(CLUB_ID){ const c = remotos.find(x=>x.id===CLUB_ID);
+      const lab = document.getElementById("clubCityLabel"); if(c && lab) lab.textContent = c.nombre; }
+    setSync("ok","Sincronizado");
+  }, err=>{ cloudErr=String(err&&err.message||err); setSync("err","Error de sincronizacion"); });
+}
+async function cloudPushClub(c){
+  if(!cloudOn() || applyingCloud) return;
+  try{ setSync("sync","Subiendo...");
+    await fdb.collection("clubes").doc(c.id).set({nombre:c.nombre, escudo:c.escudo||"", clave:String(c.clave||""), updatedAt:Date.now()},{merge:true});
+    setSync("ok","Sincronizado");
+  }catch(e){ setSync("err","No se pudo subir el club"); }
+}
+async function cloudDeleteClub(id){
+  if(!cloudOn()) return;
+  try{
+    const col = fdb.collection("clubes").doc(id).collection("data");
+    const docs = await col.get();
+    const bs = fdb.batch(); docs.forEach(d=>bs.delete(d.ref)); bs.delete(fdb.collection("clubes").doc(id));
+    await bs.commit();
+  }catch(e){ setSync("err","No se pudo borrar en la nube"); }
+}
+
+/* ---- Datos de un club (torneos, ranking, fotos...) ---- */
+const revLocal = id => { try{ return localStorage.getItem(ck(id,"rev"))||""; }catch(e){ return ""; } };
+async function cloudPushData(id){
+  if(!cloudOn() || applyingCloud || !id) return false;
+  try{
+    setSync("sync","Subiendo...");
+    const json = JSON.stringify(data);
+    const trozos = []; for(let i=0;i<json.length;i+=CHUNK) trozos.push(json.slice(i,i+CHUNK));
+    const col = fdb.collection("clubes").doc(id).collection("data");
+    for(let i=0;i<trozos.length;i+=4){
+      await Promise.all(trozos.slice(i,i+4).map((sx,j)=>col.doc("p"+(i+j)).set({s:sx})));
+    }
+    let previas = 0; try{ previas = +(localStorage.getItem(ck(id,"parts"))||0); }catch(e){}
+    for(let i=trozos.length;i<previas;i++){ try{ await col.doc("p"+i).delete(); }catch(e){} }
+    const rev = String(Date.now())+"-"+Math.random().toString(36).slice(2,7);
+    await fdb.collection("clubes").doc(id).set({parts:trozos.length, rev, updatedAt:Date.now()},{merge:true});
+    try{ localStorage.setItem(ck(id,"rev"),rev); localStorage.setItem(ck(id,"parts"),String(trozos.length)); }catch(e){}
+    setSync("ok","Sincronizado");
+    return true;
+  }catch(e){ setSync("err","No se pudo subir"); return false; }
+}
+async function cloudPullData(id){
+  if(!cloudOn() || !id) return false;
+  try{
+    setSync("sync","Bajando...");
+    const snap = await fdb.collection("clubes").doc(id).get();
+    const meta = snap.exists ? snap.data() : null;
+    if(!meta || !meta.parts){ setSync("ok","Sincronizado"); return false; }
+    const col = fdb.collection("clubes").doc(id).collection("data");
+    const docs = await Promise.all(Array.from({length:meta.parts},(_,i)=>col.doc("p"+i).get()));
+    const json = docs.map(d=>d.exists?(d.data().s||""):"").join("");
+    const obj = JSON.parse(json);
+    try{
+      localStorage.setItem(ck(id,"data5"), JSON.stringify(obj));
+      localStorage.setItem(ck(id,"rev"), meta.rev||"");
+      localStorage.setItem(ck(id,"parts"), String(meta.parts));
+    }catch(e){ setSync("err","No entra en este navegador"); return false; }
+    setSync("ok","Sincronizado");
+    return true;
+  }catch(e){ setSync("err","No se pudo bajar"); return false; }
+}
+const draftSucio = () => !!(state && state.draft && JSON.stringify(state.draft)!==JSON.stringify(data));
+function cloudWatchData(id){
+  if(!cloudOn() || !id) return;
+  if(unsubData){ try{ unsubData(); }catch(e){} unsubData=null; }
+  unsubData = fdb.collection("clubes").doc(id).onSnapshot(async snap=>{
+    const meta = snap.exists ? snap.data() : null;
+    if(!meta || !meta.rev || meta.rev===revLocal(id)) return;
+    if(draftSucio()){ pendingCloudRev = meta.rev; render(); return; } // hay cambios sin guardar: avisa y no pisa nada
+    if(await cloudPullData(id) && CLUB_ID===id){
+      loadClubState();
+      if(state.admin) state.draft = clone(data);
+      pendingCloudRev = null;
+      render(); toast("Se actualizo con los cambios de otro dispositivo");
+    }
+  }, err=>setSync("err","Error de sincronizacion"));
+}
+function cloudUnwatchData(){ if(unsubData){ try{ unsubData(); }catch(e){} unsubData=null; } pendingCloudRev=null; }
+async function cloudAcceptPending(){
+  if(!CLUB_ID) return;
+  if(await cloudPullData(CLUB_ID)){ loadClubState(); if(state.admin) state.draft=clone(data); pendingCloudRev=null; render(); toast("Datos actualizados desde la nube"); }
+}
+/* Primera vez en un dispositivo nuevo: si el club no tiene nada local pero si en la nube, baja.
+   Si tiene algo local mas nuevo que la nube, sube. */
+async function cloudSyncClub(id){
+  if(!cloudOn() || !id) return;
+  try{
+    const snap = await fdb.collection("clubes").doc(id).get();
+    const meta = snap.exists ? snap.data() : null;
+    const hayLocal = !!localStorage.getItem(ck(id,"data5"));
+    if(meta && meta.rev && meta.rev!==revLocal(id) && (!hayLocal || !draftSucio())){
+      if(await cloudPullData(id) && CLUB_ID===id){ loadClubState(); if(state.admin) state.draft=clone(data); render(); }
+    } else if(hayLocal && (!meta || !meta.parts)){
+      await cloudPushData(id);
+    }
+  }catch(e){}
+}
+
 /* ================= Utilidades compartidas (portón + app) ================= */
 const esc = s => String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 let toastT;
@@ -609,7 +784,7 @@ function shieldHTML(c){ return c.escudo ? `<img src="${esc(c.escudo)}" alt="">` 
 function shieldAttrs(c){ return c.escudo ? `class="club-shield has-img"` : `class="club-shield" style="background:${clubColor(c.id)}"`; }
 const clubStore = {
   get(){ try{ return JSON.parse(localStorage.getItem("liga_clubes")||"[]"); }catch(e){ return []; } },
-  set(arr){ try{ localStorage.setItem("liga_clubes", JSON.stringify(arr)); return true; }catch(e){ toast("No se pudo guardar: el navegador se quedó sin espacio."); return false; } }
+  set(arr){ try{ localStorage.setItem("liga_clubes", JSON.stringify(arr)); if(!applyingCloud) arr.forEach(c=>cloudPushClub(c)); return true; }catch(e){ toast("No se pudo guardar: el navegador se quedó sin espacio."); return false; } }
 };
 /* Migración: si ya había datos de una liga sin sistema de clubes (versión anterior de esta app),
    se crea automáticamente un primer club "Club" que apunta a esos datos, para no perder nada. */
@@ -697,8 +872,11 @@ function bootApp(id, rol){
   location.hash = "";
   render();
   window.scrollTo(0,0);
+  cloudWatchData(id);
+  cloudSyncClub(id);
 }
 function exitToGate(){
+  cloudUnwatchData();
   try{ sessionStorage.removeItem("liga_sesion"); sessionStorage.removeItem("liga:admin"); }catch(e){}
   gateMode = state.rol==="jugador" ? "player" : "admin";
   state.admin=false; state.draft=null; state.rol=""; CLUB_ID=""; DATA_OWNER=""; gateSel=null; location.hash="";
@@ -857,6 +1035,7 @@ function renderClubAdmin(){
       if(raw && confirm("Antes de borrarlo, ¿descargamos una copia de sus datos?")) bajarJSON("respaldo-"+(c?c.nombre:id).replace(/[^a-z0-9]+/gi,"-").toLowerCase()+".json", JSON.parse(raw));
     }catch(e){}
     clubStore.set(clubStore.get().filter(x=>x.id!==id));
+    cloudDeleteClub(id);
     try{ const pre="liga:c:"+id+":"; Object.keys(localStorage).filter(k=>k.startsWith(pre)).forEach(k=>localStorage.removeItem(k)); }catch(e){}
     if(clubAdminEditing===id){ clubAdminEditing=null; clubAdminDraftEscudo=""; }
     renderClubAdmin(); renderGate();
@@ -1036,6 +1215,7 @@ function saveData(){
   if(DATA_OWNER && DATA_OWNER!==CLUB_ID){ toast("Los datos cargados son de otro club: no se guardó nada."); return false; }
   if(!store.set("data5",JSON.stringify(data))){ toast("No se pudo guardar: el navegador se quedó sin espacio. Probá con menos fotos."); return false; }
   DATA_OWNER = CLUB_ID;
+  cloudPushData(CLUB_ID);
   return true;
 }
 const loadProfile = key => store.get("perfil:"+key,"");
@@ -1514,6 +1694,9 @@ function vAdmin(){
   const players=[...new Set(Object.values(DM().ranking).flat().map(r=>r[0]))].sort();
   return `<section class="wrap page">
     <div class="page-head"><div><h1 class="display">Panel</h1><p class="sub">Los cambios se ven en el sitio cuando tocás Guardar.</p></div></div>
+    ${pendingCloudRev?`<div class="cloud-warn"><span>Alguien cargó cambios en ${esc(clubName())} desde otro dispositivo. No los bajo solo porque tenés cambios sin guardar acá.</span>
+      <button class="btn ghost sm" data-act="cloud-pull">Bajar los de la nube (pierdo lo mío)</button>
+      <button class="btn sm" data-act="cloud-push">Guardar lo mío y pisar la nube</button></div>`:""}
     <div class="scroll-x admin-tabs"><div class="seg" role="group" aria-label="Sección">${tabs.map(([k,l])=>`<button data-atab="${k}" aria-pressed="${state.adminTab===k}">${l}</button>`).join("")}</div></div>
     ${perMod?`<div class="mod-pick"><span>Estás editando</span>${modSeg()}${genSeg()}${["ranking"].includes(state.adminTab)?yearSel(DM()):""}</div>`:""}
     <datalist id="dlPlayers">${players.map(n=>`<option value="${esc(n)}">`).join("")}</datalist>
@@ -1663,6 +1846,13 @@ function aDatos(){
       <label class="btn ghost filebtn">Importar copia<input type="file" accept="application/json,.json" id="importFile"></label>
     </div>
     <p class="hint" style="margin:0">Si importás un archivo que trae solo rankings y torneos (sin información, novedades ni fotos), se reemplazan únicamente esas modalidades y el resto queda como está.</p>
+    <div class="block" style="margin-top:4px"><div class="block-head"><strong>Sincronizacion</strong></div>
+      <p class="hint" style="margin:0 0 8px">${cloudOn()?`Los cambios de ${esc(clubName())} se guardan tambien en la nube y aparecen solos en los otros dispositivos.`:"Todavia no esta configurada: los datos viven solo en este navegador."}</p>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn ghost sm" data-act="cloud-up"${cloudOn()?"":" disabled"}>Subir a la nube ahora</button>
+        <button class="btn ghost sm" data-act="cloud-down"${cloudOn()?"":" disabled"}>Bajar de la nube</button>
+      </div>
+    </div>
     <div class="block" style="margin-top:4px"><div class="block-head"><strong>Copias de seguridad de ${esc(clubName())}</strong></div>
       <p class="hint" style="margin:0 0 8px">La app guarda una copia sola antes de cada borrado y cada vez que apretás "Guardar copia ahora". Se quedan las últimas ${BK_MAX}.</p>
       ${bks.length?`<div class="bk-list">${bks.map((b,i)=>`<div class="bk-row"><span class="bk-i"><b>${esc(bkFecha(b.ts))}</b><em>${esc(b.motivo||"")}</em></span>
@@ -1759,6 +1949,15 @@ function adminAction(act,el){
       try{ data=normalize(migrate(JSON.parse(b.json))); }catch(e){ toast("La copia está dañada"); return; }
       saveData(); state.draft=clone(data); state.closedTours=null; toast("Copia restaurada"); break; }
     case "bk-now": bkSave("Copia manual"); toast("Copia guardada"); break;
+    case "cloud-pull": if(!confirm("Se bajan los datos de la nube y se pierden los cambios sin guardar de este dispositivo. ¿Seguir?")) return;
+      bkSave("Antes de bajar de la nube"); state.draft=clone(data); cloudAcceptPending(); return;
+    case "cloud-push": { const dd=state.draft; if(dd){ const prev=data; data=normalize(clone(dd)); if(!saveData()) data=prev; }
+      pendingCloudRev=null; toast("Subido a la nube"); break; }
+    case "cloud-up": if(!cloudOn()){ toast("No hay sincronizacion configurada"); return; }
+      cloudPushData(CLUB_ID); toast("Subiendo a la nube..."); return;
+    case "cloud-down": if(!cloudOn()){ toast("No hay sincronizacion configurada"); return; }
+      if(!confirm(`Se reemplaza lo que hay en este dispositivo por lo que esta en la nube para ${clubName()}. ¿Seguir?`)) return;
+      bkSave("Antes de bajar de la nube"); cloudAcceptPending(); return;
     case "logout": logout(); return;
   }
   render();
@@ -1923,6 +2122,8 @@ render();
 
 /* Si esta pestaña ya tenía una sesión abierta (club o jugador), entra directo sin pedir la clave de nuevo.
    Va al final porque necesita que state y data ya estén cargados. */
+cloudInit();
+
 (function autoEnter(){
   try{
     const sid = sessionStorage.getItem("liga_sesion")||"", i = sid.indexOf(":");
