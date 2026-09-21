@@ -322,6 +322,7 @@ svg.tchev{width:20px;height:20px;flex-shrink:0;transition:transform .18s;color:v
 .tsummary{margin:0;color:var(--muted);font-size:.92rem}
 .chip{margin-left:auto;font-size:.8rem;font-weight:800;padding:3px 10px;border-radius:99px;background:var(--surface-2);color:var(--muted)}
 .chip.fin{color:var(--win)}.chip.live{background:var(--ball);color:var(--ball-ink)}
+.step-chip.ok{box-shadow:inset 0 0 0 1.5px var(--win);color:var(--win)}
 .tfinals{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:16px}
 .tfinal .actions{display:flex;gap:8px;margin-top:10px}
 @media (max-width:640px){.timeline{padding-left:0}.timeline::before,.tnode{display:none}}
@@ -2545,6 +2546,26 @@ function vFotos(){
 /* ================= Administración ================= */
 const DM = () => state.draft.modalidades[genKey()];
 const P = rest => `modalidades.${genKey()}.${rest}`;
+/* Checklist de arranque: le muestra al organizador, de un vistazo, qué falta para dejar lista la modalidad que está mirando. */
+function adminChecklist(){
+  const m=DM(), torneos=m.torneos||[];
+  const abiertos=torneos.filter(t=>t.estado!=="Finalizado");
+  const tour=abiertos[0]||torneos[torneos.length-1]||null;
+  const cs=tour?tourCats(tour,m):[];
+  const nCat=m.categorias.length;
+  const withInsc=tour?cs.filter(c=>inscList(m,tour.id,c.id).length>0).length:0;
+  const withDraw=tour?cs.filter(c=>!!drawOf(m,tour.id,c.id)).length:0;
+  const steps=[
+    {ok:nCat>0, label:nCat>0?`Categorías (${nCat})`:"Categorías", tab:"categorias"},
+    {ok:!!tour, label:tour?`Torneo: ${tour.nombre||"sin nombre"}`:"Torneo creado", tab:"torneos"},
+    {ok:!!tour&&cs.length>0&&withInsc===cs.length, label:!tour?"Inscriptos":cs.length?`Inscriptos (${withInsc} de ${cs.length} cat.)`:"Inscriptos (sin categorías)", tab:tour?"sorteo":"torneos"},
+    {ok:!!tour&&cs.length>0&&withDraw===cs.length, label:!tour?"Sorteo":cs.length?`Sorteo (${withDraw} de ${cs.length} cat.)`:"Sorteo", tab:tour?"sorteo":"torneos"}
+  ];
+  return `<div class="block" style="padding:12px 14px;gap:10px">
+    <div class="block-head" style="flex-wrap:wrap;row-gap:8px"><strong>Cómo va ${esc(modGenLabel().toLowerCase())}</strong>${modSeg()}${genSeg()}</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">${steps.map((s,i)=>`<button type="button" class="btn ghost sm step-chip${s.ok?" ok":""}" data-atab="${s.tab}">${s.ok?"✓":i+1}. ${esc(s.label)}</button>`).join("")}</div>
+  </div>`;
+}
 function vAdmin(){
   if(!state.admin) return `<section class="wrap page"><div class="empty"><strong>Sección solo para administradores</strong>Para editar, entrá con tu club desde la pantalla de inicio.<br><button class="btn ghost" data-act="exit-club">Ir a la pantalla de inicio</button></div></section>`;
   if(!state.draft) state.draft=clone(data);
@@ -2554,6 +2575,7 @@ function vAdmin(){
   const players=[...new Set(Object.values(DM().ranking).flat().map(r=>r[0]))].sort();
   return `<section class="wrap page">
     <div class="page-head"><div><h1 class="display">Panel</h1><p class="sub">Los cambios se ven en el sitio cuando tocás Guardar.</p></div></div>
+    ${adminChecklist()}
     ${pendingCloudRev?`<div class="cloud-warn"><span>Alguien cargó cambios en ${esc(clubName())} desde otro dispositivo. No los bajo solo porque tenés cambios sin guardar acá.</span>
       <button class="btn ghost sm" data-act="cloud-pull">Bajar los de la nube (pierdo lo mío)</button>
       <button class="btn sm" data-act="cloud-push">Guardar lo mío y pisar la nube</button></div>`:""}
