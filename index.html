@@ -280,7 +280,7 @@ table.rank{width:100%;border-collapse:collapse}
 .rank tr:last-child td{border-bottom:0}
 .rank td.player{text-align:left}
 .ap{font-weight:750}.nom{color:var(--muted)}
-.pclub{color:var(--muted);font-size:.78rem;font-weight:600;opacity:.9;display:inline-flex;align-items:center;gap:4px;vertical-align:middle}
+.pclub{color:var(--muted);font-size:.78rem;font-weight:600;opacity:.9;display:inline-flex;align-items:center;gap:4px;vertical-align:middle;margin-left:5px}
 .pclub-logo{width:15px;height:15px;border-radius:50%;object-fit:cover;flex:none}
 .pclub-logo-ph{display:grid;place-items:center;color:#fff;font-weight:800;font-stretch:70%;font-size:.55rem}
 .pc-club-edit{max-width:280px;margin-top:14px}
@@ -1906,10 +1906,18 @@ function loadClubState(){
 
 /* ================= Utilidades ================= */
 const nl2br = s => esc(s).replace(/\n/g,"<br>");
-const split = full => { const i=String(full).indexOf(", "); return i<0?{ap:String(full),nom:""}:{ap:full.slice(0,i),nom:full.slice(i+2)}; };
+const split = full => {
+  const s = String(full);
+  const i = s.indexOf(", ");
+  if(i>=0) return {ap:s.slice(0,i), nom:s.slice(i+2)};
+  /* Sin coma: "Apellido Nombre" -> se toma la última palabra como nombre
+     y el resto como apellido (soporta apellidos compuestos). */
+  const j = s.trim().lastIndexOf(" ");
+  return j<0 ? {ap:s,nom:""} : {ap:s.trim().slice(0,j), nom:s.trim().slice(j+1)};
+};
 const nameHTML = full => { const s=split(full); const info=isCircuitoClub()?playerClubInfo(full):null;
   const clubTag = info ? `<span class="pclub">${miniShieldHTML(info)}<span class="pclub-name">${esc(info.nombre)}</span></span>` : "";
-  return `<span class="ap">${esc(s.ap)}</span>${s.nom?` <span class="nom">${esc(s.nom)}</span>`:""}${clubTag}`; };
+  return `<span class="ap">${esc(s.ap)}</span>${s.nom?` <span class="nom">${esc(s.nom)}</span>`:""}${clubTag?` ${clubTag}`:""}`; };
 const pill = p => p==null||p==="" ? `<span class="pill p0">—</span>` : `<span class="pill p${p}" title="${PTS[p]||""}">${p}</span>`;
 const joinY = arr => arr.length<2?arr.join(""):arr.slice(0,-1).join(", ")+" y "+arr[arr.length-1];
 function parseScore(str){
