@@ -1984,6 +1984,9 @@ function playerFoto(name){ return (data.jugadores&&data.jugadores[name]&&data.ju
    anotado cada jugador por su nombre. Si en algún caso hiciera falta corregirlo a mano, el campo
    "Club" de la ficha del jugador sigue existiendo y tiene prioridad sobre lo detectado solo. */
 let circuitoIdx = {}, circuitoIdxReady = false, circuitoIdxBuilding = false;
+/* Para comparar nombres entre clubes: "Pin, Lisandro" y "Pin Lisandro" son la misma persona.
+   Ignora la coma, mayúsculas, tildes y espacios de más. */
+const normName = s => String(s==null?"":s).normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/,/g," ").replace(/\s+/g," ").trim().toLowerCase();
 function loadClubData5(id){ try{ return JSON.parse(localStorage.getItem(ck(id,"data5"))||"null"); }catch(e){ return null; } }
 /* Baja los datos de OTRO club en silencio (sin tocar el indicador de sincronización del club
    actual), solo para poder armar el índice de jugadores. */
@@ -2014,7 +2017,7 @@ async function buildCircuitoIndex(){
       Object.values(obj.modalidades).forEach(m=>{
         if(!m || !m.ranking) return;
         Object.values(m.ranking).forEach(rows=>{
-          (rows||[]).forEach(r=>{ const name=r&&r[0]; if(name && !(name in idx)) idx[name]=c.id; });
+          (rows||[]).forEach(r=>{ const k=normName(r&&r[0]); if(k && !(k in idx)) idx[k]=c.id; });
         });
       });
     });
@@ -2032,7 +2035,7 @@ function playerClubInfo(name){
   if(!isCircuitoClub()) return null;
   const manual = (data.jugadores&&data.jugadores[name]&&data.jugadores[name].club)||"";
   if(manual){ const c=clubStore.get().find(x=>x.nombre===manual); return {id:c&&c.id,nombre:manual,escudo:(c&&c.escudo)||""}; }
-  const id = circuitoIdx[name]; if(!id) return null;
+  const id = circuitoIdx[normName(name)]; if(!id) return null;
   const c = clubStore.get().find(x=>x.id===id); if(!c) return null;
   return {id:c.id,nombre:c.nombre,escudo:c.escudo||""};
 }
