@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" data-surface="polvo" data-mode="dark">
+<html lang="es" data-surface="polvo">
 <head>
 <meta charset="UTF-8">
 <meta name="format-detection" content="telephone=no, date=no, address=no, email=no">
@@ -42,15 +42,9 @@
   --accent:#D0652F;--accent-2:#B0521F;--accent-ink:#FFF7EF;--ball:#DDE95B;--ball-ink:#1C2200;
   --win:#8FD9A8;--loss:#F4927F;--court-in:#C0582B;--court-out:#AE4D24;--grain:.28;--mow:0;
 }
-:root[data-surface="polvo"][data-mode="dark"]{--bg:#1B130F;--surface:#281C15;--surface-2:#33241B;--text:#F6EFE7;--muted:#C7B1A1;--accent:#D0652F;--accent-2:#B0521F;--accent-ink:#FFF7EF;--ball:#DDE95B;--ball-ink:#1C2200;--win:#8FD9A8;--loss:#F4927F}
-:root[data-surface="polvo"][data-mode="light"]{--bg:#F4ECE4;--surface:#FFFDFB;--surface-2:#F7EFE7;--text:#2B1A11;--muted:#7B5F4E;--accent:#B8522A;--accent-2:#9A431F;--accent-ink:#FFF7EF;--ball:#C3D431;--ball-ink:#2F3600;--win:#1F8A55;--loss:#C2473A}
-:root[data-surface="polvo"]{--court-in:#C0582B;--court-out:#AE4D24;--grain:.28;--mow:0}
-:root[data-surface="cesped"][data-mode="dark"]{--bg:#0C2417;--surface:#123220;--surface-2:#193F29;--text:#EFF3EC;--muted:#A3BCA8;--accent:#8457C2;--accent-2:#6C43A6;--accent-ink:#FFFFFF;--ball:#DDE95B;--ball-ink:#1C2200;--win:#8FD9A8;--loss:#F4927F}
-:root[data-surface="cesped"][data-mode="light"]{--bg:#ECF3EA;--surface:#FFFFFF;--surface-2:#F2F7F0;--text:#0F2618;--muted:#56705E;--accent:#5B2E8C;--accent-2:#4A2474;--accent-ink:#FFFFFF;--ball:#C3D431;--ball-ink:#2F3600;--win:#1F8A55;--loss:#C2473A}
-:root[data-surface="cesped"]{--court-in:#4B8C38;--court-out:#417D30;--grain:.14;--mow:1}
-:root[data-surface="dura"][data-mode="dark"]{--bg:#0B1828;--surface:#122338;--surface-2:#192E47;--text:#EEF3F9;--muted:#9EB2C8;--accent:#3C86DB;--accent-2:#2C6FBF;--accent-ink:#FFFFFF;--ball:#DDE95B;--ball-ink:#1C2200;--win:#8FD9A8;--loss:#F4927F}
-:root[data-surface="dura"][data-mode="light"]{--bg:#E9F0F8;--surface:#FFFFFF;--surface-2:#F1F5FA;--text:#0E1E32;--muted:#52667E;--accent:#1F5FAE;--accent-2:#194E90;--accent-ink:#FFFFFF;--ball:#C3D431;--ball-ink:#2F3600;--win:#1F8A55;--loss:#C2473A}
-:root[data-surface="dura"]{--court-in:#2D66A3;--court-out:#3A7753;--grain:.1;--mow:0}
+:root[data-surface="polvo"]{--bg:#1B130F;--surface:#281C15;--surface-2:#33241B;--text:#F6EFE7;--muted:#C7B1A1;--accent:#D0652F;--accent-2:#B0521F;--accent-ink:#FFF7EF;--ball:#DDE95B;--ball-ink:#1C2200;--win:#8FD9A8;--loss:#F4927F;--court-in:#C0582B;--court-out:#AE4D24;--grain:.28;--mow:0}
+:root[data-surface="cesped"]{--bg:#0C2417;--surface:#123220;--surface-2:#193F29;--text:#EFF3EC;--muted:#A3BCA8;--accent:#8457C2;--accent-2:#6C43A6;--accent-ink:#FFFFFF;--ball:#DDE95B;--ball-ink:#1C2200;--win:#8FD9A8;--loss:#F4927F;--court-in:#4B8C38;--court-out:#417D30;--grain:.14;--mow:1}
+:root[data-surface="dura"]{--bg:#0B1828;--surface:#122338;--surface-2:#192E47;--text:#EEF3F9;--muted:#9EB2C8;--accent:#3C86DB;--accent-2:#2C6FBF;--accent-ink:#FFFFFF;--ball:#DDE95B;--ball-ink:#1C2200;--win:#8FD9A8;--loss:#F4927F;--court-in:#2D66A3;--court-out:#3A7753;--grain:.1;--mow:0}
 
 *,*::before,*::after{box-sizing:inherit}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
@@ -82,8 +76,6 @@ svg.i{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.9;stro
 .swatch{width:22px;height:22px;border-radius:50%;border:2px solid transparent;cursor:pointer;padding:0}
 .swatch[aria-pressed="true"]{border-color:var(--text)}
 .sw-polvo{background:#C0582B}.sw-cesped{background:#4B8C38}.sw-dura{background:#2D66A3}
-.theme-btn{background:none;border:1px solid var(--line);border-radius:8px;width:38px;height:38px;display:grid;place-items:center;cursor:pointer;color:var(--muted)}
-.theme-btn:hover{color:var(--text)}
 .adminbar{background:var(--ball);color:var(--ball-ink);font-size:.85rem;font-weight:700}
 .adminbar .wrap{display:flex;align-items:center;gap:14px;min-height:34px}
 .adminbar a,.adminbar button{color:inherit;background:none;border:0;cursor:pointer;font-weight:800;text-decoration:underline;text-underline-offset:3px;padding:0}
@@ -254,7 +246,7 @@ svg.achev{width:18px;height:18px;color:var(--muted);transition:transform .18s;fl
 @media (max-width:1120px){.brand .city{display:none}}
 @media (max-width:560px){.topbar .wrap{gap:8px}.modseg button{padding:5px 8px;font-size:.78rem}
 
-  .swatch{width:18px;height:18px}.swatches{gap:4px;padding:3px}.theme-btn{width:34px;height:34px}}
+  .swatch{width:18px;height:18px}.swatches{gap:4px;padding:3px}}
 
 .news{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px;margin-top:14px}
 .news-item{border-radius:12px;padding:22px 22px 20px;background:var(--surface);border:1px solid var(--line);position:relative;overflow:hidden}
@@ -482,7 +474,7 @@ dialog.lb::backdrop{background:rgba(5,10,8,.88)}
 
 /* Singles/Dobles y Hombres/Damas van siempre en una segunda fila del encabezado */
 .topbar .wrap{flex-wrap:wrap;height:auto;row-gap:0}
-.topbar .wrap > .brand,.topbar .wrap > .nav,.topbar .wrap > .swatches,.topbar .wrap > .theme-btn{margin-top:11px;margin-bottom:11px}
+.topbar .wrap > .brand,.topbar .wrap > .nav,.topbar .wrap > .swatches{margin-top:11px;margin-bottom:11px}
 #modslot{order:5;width:100%;padding:0 0 10px;align-items:center}
 #modslot::before{content:"Ver";font-size:.8rem;font-weight:700;color:var(--muted);margin-right:2px}
 .nav a[aria-current="page"]::after{bottom:-2px}
@@ -522,6 +514,14 @@ dialog.lb::backdrop{background:rgba(5,10,8,.88)}
 .club-shield img{width:100%;height:100%;object-fit:cover;display:block}
 .club-shield.has-img{display:block;border-radius:12px;overflow:hidden;background:#fff;padding:6px;box-sizing:border-box}
 .club-shield.has-img img{width:100%;height:100%;object-fit:contain;display:block}
+.club-shield.cshield-wrap{border-radius:12px;overflow:hidden;background:var(--surface-2);padding:0}
+.cshield-collage{display:grid;width:100%;height:100%;gap:2px}
+.cshield-collage.n1{grid-template-columns:1fr}
+.cshield-collage.n2,.cshield-collage.n3,.cshield-collage.n4{grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr}
+.cshield-collage.n2{grid-template-rows:1fr}
+.cshield-collage.n3 .cc-cell:first-child{grid-column:1/3}
+.cc-cell{display:flex;align-items:center;justify-content:center;overflow:hidden;color:#fff;font-weight:800;font-size:.6em;background:#fff}
+.cc-cell img{width:100%;height:100%;object-fit:contain;display:block}
 .club-btn .club-shield{width:120px;height:120px;font-size:2.4rem}
 .club-btn{padding:14px 12px}
 .club-btn span{font-weight:700;font-size:.88rem;line-height:1.2;word-break:break-word}
@@ -693,7 +693,6 @@ html[data-screen="1"] .credit{display:none}
     </div>
     <div class="gate-controls" role="group" aria-label="Preferencias">
       <div class="swatches" id="gateSwatches" role="group" aria-label="Superficie"></div>
-      <button class="theme-btn" id="gateThemeBtn" aria-label="Cambiar entre modo claro y oscuro"><svg class="i" viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></svg></button>
     </div>
     <button class="gate-admin-link" id="clubAdminLink">Administrador de perfiles</button>
     <div class="sync-state" id="syncStateGate"><span class="sd"></span><span class="st">Sin sincronizacion</span></div>
@@ -714,7 +713,6 @@ html[data-screen="1"] .credit{display:none}
     <nav class="nav" aria-label="Principal" id="topnav"></nav>
     <div id="modslot"></div>
     <div class="swatches" role="group" aria-label="Superficie" id="swatches"></div>
-    <button class="theme-btn" id="themeBtn" aria-label="Cambiar entre modo claro y oscuro"><svg class="i" viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></svg></button>
     <span class="sync-state mini" id="syncStateApp" title="Estado de la sincronizacion"><span class="sd"></span><span class="st"></span></span>
     <button class="exit-btn" id="switchClubBtn" aria-label="Salir" title="Salir"><svg class="i" viewBox="0 0 24 24"><path d="M15 3h4a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1h-4M10 17l5-5-5-5M15 12H3"/></svg></button>
   </div>
@@ -757,10 +755,6 @@ html[data-screen="1"] .credit{display:none}
    la elección guardada y no un valor por defecto. */
 (function(){
   try{ const s=localStorage.getItem("liga:surface"); if(s) document.documentElement.dataset.surface=s; }catch(e){}
-  try{
-    const t=localStorage.getItem("liga:theme");
-    document.documentElement.dataset.mode = (t?t==="dark":matchMedia("(prefers-color-scheme: dark)").matches)?"dark":"light";
-  }catch(e){}
 })();
 
 /* =====================================================================
@@ -840,7 +834,8 @@ function cloudWatchClubes(){
       const club = {id:d.id,
         nombre: v.nombre || (l&&l.nombre) || "Club",
         escudo: ("escudo" in v) ? (v.escudo||"") : ((l&&l.escudo)||""),
-        clave: String(v.clave || (l&&l.clave) || "")};
+        clave: String(v.clave || (l&&l.clave) || ""),
+        circuito: ("circuito" in v) ? !!v.circuito : !!(l&&l.circuito)};
       remotos.push(club);
       if(l && (l.nombre||l.escudo||l.clave) && (!v.nombre || !("escudo" in v) || !v.clave)) aReparar.push(club);
     });
@@ -865,7 +860,7 @@ function cloudWatchClubes(){
 async function cloudPushClub(c){
   if(!cloudOn() || applyingCloud) return;
   try{ setSync("sync","Subiendo...");
-    await fdb.collection("clubes").doc(c.id).set({nombre:c.nombre, escudo:c.escudo||"", clave:String(c.clave||""), updatedAt:Date.now()},{merge:true});
+    await fdb.collection("clubes").doc(c.id).set({nombre:c.nombre, escudo:c.escudo||"", clave:String(c.clave||""), circuito:!!c.circuito, updatedAt:Date.now()},{merge:true});
     setSync("ok","Sincronizado");
   }catch(e){ cloudErr=String(e&&e.message||e); setSync("err","No se pudo subir el club"); toast("No se pudo subir el club a la nube. Si el escudo es muy pesado, volvé a elegirlo."); }
 }
@@ -995,8 +990,16 @@ const icon = (n,cls="") => `<svg class="i ${cls}" viewBox="0 0 24 24" aria-hidde
 const CLUB_COLORS = ["#D0652F","#3C86DB","#8457C2","#1F8A55","#B8522A","#2D66A3","#C98452","#6C43A6"];
 function clubColor(id){ let h=0; for(const c of String(id)) h=(h*31+c.charCodeAt(0))>>>0; return CLUB_COLORS[h%CLUB_COLORS.length]; }
 function initials(nombre){ return String(nombre||"?").trim().split(/\s+/).slice(0,2).map(w=>w[0]||"").join("").toUpperCase()||"?"; }
-function shieldHTML(c){ return c.escudo ? `<img src="${esc(c.escudo)}" alt="">` : initials(c.nombre); }
-function shieldAttrs(c){ return c.escudo ? `class="club-shield has-img"` : `class="club-shield" style="background:${clubColor(c.id)}"`; }
+function shieldHTML(c){ if(c.circuito) return collageHTML(c); return c.escudo ? `<img src="${esc(c.escudo)}" alt="">` : initials(c.nombre); }
+function shieldAttrs(c){ if(c.circuito) return `class="club-shield cshield-wrap"`; return c.escudo ? `class="club-shield has-img"` : `class="club-shield" style="background:${clubColor(c.id)}"`; }
+/* Escudo del "Circuito Abierto": no se sube, se arma solo combinando los logos de los demás
+   clubes (hasta 4), asi se actualiza solo cuando se agregan, editan o borran clubes. */
+function collageHTML(c){
+  const otros = clubStore.get().filter(x=>x.id!==c.id && !x.circuito).slice(0,4);
+  if(!otros.length) return `<span class="cshield-collage n1"><span class="cc-cell" style="background:${clubColor(c.id)};color:#fff">CA</span></span>`;
+  return `<span class="cshield-collage n${otros.length}">${otros.map(o=>
+    `<span class="cc-cell" style="${o.escudo?"":"background:"+clubColor(o.id)+";color:#fff"}">${o.escudo?`<img src="${esc(o.escudo)}" alt="">`:initials(o.nombre)}</span>`).join("")}</span>`;
+}
 const clubStore = {
   get(){ try{ return JSON.parse(localStorage.getItem("liga_clubes")||"[]"); }catch(e){ return []; } },
   set(arr){ try{ localStorage.setItem("liga_clubes", JSON.stringify(arr)); if(!applyingCloud) arr.forEach(c=>cloudPushClub(c)); return true; }catch(e){ toast("No se pudo guardar: el navegador se quedó sin espacio."); return false; } }
@@ -1232,7 +1235,10 @@ function renderClubAdmin(){
       <div class="block-head"><strong id="clubFormTitle">Agregar club</strong></div>
       <div class="f"><label>Nombre</label><input id="cfNombre" placeholder="Nombre del club"></div>
       <div class="f"><label>Clave numérica</label><input id="cfClave" inputmode="numeric" pattern="[0-9]*" placeholder="Ej: 1234"></div>
-      <div class="f"><label>Escudo (imagen, opcional)</label>
+      <div class="f"><label style="display:flex;align-items:center;gap:8px;font-weight:600"><input type="checkbox" id="cfCircuito" style="width:auto"> Es el "Circuito Abierto" (torneo entre clubes)</label>
+        <p class="hint" style="margin:4px 0 0">Un torneo aparte, con su propio ranking y cuadro, donde se anotan jugadores de cualquier club. Su escudo se arma solo combinando los logos de los demás clubes.</p>
+      </div>
+      <div class="f" id="cfEscudoWrap"><label>Escudo (imagen, opcional)</label>
         <div class="filebtn btn ghost sm" style="display:inline-flex">Elegir imagen<input type="file" accept="image/*" id="cfEscudo"></div>
         <img id="cfPreview" class="preview-img" style="display:none;margin-top:8px;max-width:90px">
       </div>
@@ -1257,9 +1263,13 @@ function renderClubAdmin(){
       document.getElementById("cfClave").value=c.clave;
       document.getElementById("clubFormTitle").textContent="Editar club";
       document.getElementById("cfCancelEdit").style.display="inline-flex";
+      document.getElementById("cfCircuito").checked = !!c.circuito;
       if(clubAdminDraftEscudo){ const pv=document.getElementById("cfPreview"); pv.src=clubAdminDraftEscudo; pv.style.display="block"; }
     }
   }
+  const syncCircuitoUI=()=>{ document.getElementById("cfEscudoWrap").style.display = document.getElementById("cfCircuito").checked ? "none" : ""; };
+  document.getElementById("cfCircuito").onchange = syncCircuitoUI;
+  syncCircuitoUI();
   document.getElementById("cfEscudo").onchange = async e=>{
     const f=e.target.files[0]; if(!f) return;
     try{ const url=await downscaleEscudo(f); clubAdminDraftEscudo=url;
@@ -1289,14 +1299,19 @@ function renderClubAdmin(){
   document.getElementById("cfSave").onclick=()=>{
     const nombre=(document.getElementById("cfNombre").value||"").trim();
     const clave=(document.getElementById("cfClave").value||"").trim();
+    const circuito=document.getElementById("cfCircuito").checked;
     if(!nombre){ toast("Poné un nombre para el club"); return; }
     if(!/^[0-9]{2,8}$/.test(clave)){ toast("La clave debe ser numérica (2 a 8 dígitos)"); return; }
     let clubes2 = clubStore.get();
+    if(circuito && clubes2.some(x=>x.circuito && x.id!==clubAdminEditing)){
+      toast("Ya existe un Circuito Abierto: editalo o eliminalo antes de crear otro"); return;
+    }
+    const escudo = circuito ? "" : clubAdminDraftEscudo;
     if(clubAdminEditing){
-      clubes2 = clubes2.map(c=>c.id===clubAdminEditing?{...c,nombre,clave,escudo:clubAdminDraftEscudo}:c);
+      clubes2 = clubes2.map(c=>c.id===clubAdminEditing?{...c,nombre,clave,escudo,circuito}:c);
     } else {
       const id = "c"+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
-      clubes2 = [...clubes2,{id,nombre,clave,escudo:clubAdminDraftEscudo}];
+      clubes2 = [...clubes2,{id,nombre,clave,escudo,circuito}];
     }
     clubStore.set(clubes2);
     clubAdminEditing=null; clubAdminDraftEscudo="";
@@ -1745,7 +1760,7 @@ const DEFAULT_DATA = {
    Solo la superficie y el tema claro/oscuro son globales. Antes de entrar a un club (CLUB_ID vacío) se usa el espacio viejo "liga:". */
 let CLUB_ID = "";
 let DATA_OWNER = "";            // club dueño de lo que hay cargado en memoria
-const GLOBAL_KEYS = new Set(["surface","theme"]); // lo único que se comparte entre clubes
+const GLOBAL_KEYS = new Set(["surface"]); // lo único que se comparte entre clubes
 const DATA_KEYS = ["data5","data4","data3"];
 const ck = (id,k) => "liga:c:"+id+":"+k;
 /* Clave real en localStorage. Si NO hay un club abierto, todo lo que no sea global
@@ -3203,19 +3218,11 @@ document.getElementById("svZoom").onclick=toggleZoom;
 document.getElementById("svClose").onclick=()=>sv.close();
 sv.addEventListener("click",e=>{ if(e.target===sv) sv.close(); });
 
-/* Tema claro/oscuro */
-const mq=matchMedia("(prefers-color-scheme: dark)");
-function applyMode(){ const t=store.get("theme",null); document.documentElement.dataset.mode=(t?t==="dark":mq.matches)?"dark":"light"; }
-mq.addEventListener&&mq.addEventListener("change",applyMode);
-function toggleTheme(){ const next=document.documentElement.dataset.mode==="dark"?"light":"dark"; store.set("theme",next); applyMode(); }
-document.getElementById("themeBtn").onclick=toggleTheme;
-document.getElementById("gateThemeBtn").onclick=toggleTheme;
-
 /* Color de la barra del celular = fondo del tema que esté usando la persona */
 (function(){
   const m=document.querySelector('meta[name="theme-color"]'); if(!m) return;
   const sync=()=>{ const c=getComputedStyle(document.documentElement).getPropertyValue("--bg").trim(); if(c) m.setAttribute("content",c); };
-  new MutationObserver(sync).observe(document.documentElement,{attributes:true,attributeFilter:["data-mode","data-surface"]});
+  new MutationObserver(sync).observe(document.documentElement,{attributes:true,attributeFilter:["data-surface"]});
   sync();
 })();
 
@@ -3224,7 +3231,6 @@ if("serviceWorker" in navigator && /^https?:$/.test(location.protocol)){
   window.addEventListener("load",()=>{ navigator.serviceWorker.register("sw.js").catch(()=>{}); });
 }
 
-applyMode();
 render();
 
 /* Si esta pestaña ya tenía una sesión abierta (club o jugador), entra directo sin pedir la clave de nuevo.
