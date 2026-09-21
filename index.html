@@ -2506,7 +2506,7 @@ function vPartidos(){
       <datalist id="clubOptsDl">${clubNameOptions().map(n=>`<option value="${esc(n)}">`).join("")}</datalist>` : "";
   return `<section class="wrap page"><div class="page-tools">${yearSel()}</div>
     <div class="pcard"><div class="pc-main">
-        <h1 class="display">${esc(s.ap)}</h1><span class="sub">${esc(s.nom)}${s.nom?", ":""}Categoría ${esc(catName(p.cat))}${modNote()}${isProfile?' <span class="me-tag">Tu perfil</span>':""}${clubInfo?` <span class="pclub">${miniShieldHTML(clubInfo)}<span class="pclub-name">${esc(clubInfo.nombre)}</span></span>`:""}</span>
+        <h1 class="display">${esc(s.ap)}</h1><span class="sub">${esc(s.nom)}${s.nom?", ":""}Categoría ${esc(catName(p.cat))}${modNote()}${isProfile?' <span class="me-tag">Tu perfil</span>':""}${clubInfo?` <span class="pclub">${miniShieldHTML(clubInfo)}</span>`:""}</span>
       <div class="pc-actions">${isProfile?`<button class="btn ghost sm" data-act="unprofile">Dejar de usar como mi perfil</button>`
         :`<button class="btn sm" data-act="profile">Guardar como mi perfil</button>`}<button class="btn ghost sm" data-act="pick">Elegir ${otroJugador()}</button></div>
       ${clubEdit}
