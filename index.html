@@ -457,6 +457,11 @@ dialog.lb::backdrop{background:rgba(5,10,8,.88)}
 .f input,.f select,.f textarea,.cell input,.cell select{border:1px solid var(--line-strong);background:var(--bg);border-radius:8px;padding:8px 10px;font-weight:500;font-size:.95rem;color:var(--text);width:100%}
 .f textarea{min-height:110px;resize:vertical;line-height:1.45}
 .admin-tabs{margin-bottom:18px}
+.admin-tabs .seg button{padding:5px 9px;font-size:.78rem}
+.scroll-x{scrollbar-width:thin}
+.scroll-x::-webkit-scrollbar{height:6px}
+.scroll-x::-webkit-scrollbar-thumb{background:var(--line);border-radius:4px}
+.scroll-x::-webkit-scrollbar-track{background:transparent}
 .panel{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:22px;display:flex;flex-direction:column;gap:18px}
 .panel h2{font-stretch:75%;font-weight:850;font-size:1.4rem;margin:0}
 .panel .hint{color:var(--muted);font-size:.88rem;margin:-10px 0 0}
@@ -2149,7 +2154,8 @@ function latestFinished(){
 
 /* ================= Componentes ================= */
 function scoreboard(a,b,sets,aWon,compact=false,short=false){
-  const nm = n => esc(short ? dispSplit(n).ap : shortName(n));
+  const nm = n => { if(!short) return esc(shortName(n));
+    const s=dispSplit(n); return esc(s.nom ? `${s.ap} ${s.nom.trim()[0].toUpperCase()}.` : s.ap); };
   const min = compact?0:3; // en Resultados fijamos 3 columnas para que todas las líneas alineen
   let n=1,rowA="",rowB="";
   if(sets==="WO"){
@@ -3178,7 +3184,8 @@ function drawRounds(m,tid,cid,sd){
 }
 /* Partido todavía sin jugar: sin score. win (0/1) marca al que pasa directo cuando el rival es BYE. */
 function pendingSB(a,b,win){
-  const nm=x=>!x?'<span class="tbd">A definir</span>':(x===BYE?'<span class="tbd">BYE</span>':esc(dispSplit(x).ap));
+  const nm=x=>{ if(!x) return '<span class="tbd">A definir</span>'; if(x===BYE) return '<span class="tbd">BYE</span>';
+    const s=dispSplit(x); return esc(s.nom ? `${s.ap} ${s.nom.trim()[0].toUpperCase()}.` : s.ap); };
   const row=(x,w)=>`<div class="sb-row${w?" w":""}"><span class="sb-name" title="${esc(x===BYE?"BYE":(x||""))}">${nm(x)}</span><span class="g pad"></span></div>`;
   return `<div class="sb c" style="--n:1">${row(a,win===0)}${row(b,win===1)}</div>`;
 }
