@@ -280,6 +280,8 @@ table.rank{width:100%;border-collapse:collapse}
 .rank tr:last-child td{border-bottom:0}
 .rank td.player{text-align:left}
 .ap{font-weight:750}.nom{color:var(--muted)}
+.pclub{color:var(--muted);font-size:.78rem;font-weight:600;opacity:.85}
+.pc-club-edit{max-width:280px;margin-top:14px}
 .rank .star{color:var(--gold);margin-left:4px;font-size:.85rem}
 .rank .total{font-stretch:75%;font-weight:900;font-size:1.35rem;font-variant-numeric:tabular-nums;text-align:right;padding-right:18px}
 .pos{display:inline-grid;place-items:center;width:2rem;height:2rem;border-radius:50%;font-weight:800;font-variant-numeric:tabular-nums;font-size:.95rem}
@@ -295,6 +297,7 @@ table.rank{width:100%;border-collapse:collapse}
   .long{display:none}.short{display:inline}
   .rank th,.rank td{padding-left:3px;padding-right:3px}
   .rank .nom{display:block;font-size:.82rem;line-height:1.2}
+  .rank .pclub{display:block;font-size:.76rem;line-height:1.2}
   .pill{min-width:2.1rem;height:1.6rem;font-size:.82rem}
   .rank .total{padding-right:12px;font-size:1.2rem}
   .search input{width:120px}
@@ -365,6 +368,7 @@ svg.tchev{width:20px;height:20px;flex-shrink:0;transition:transform .18s;color:v
 .pchip{border:1px solid var(--line);background:var(--surface);border-radius:99px;padding:7px 14px;cursor:pointer;font-weight:600}
 .pchip:hover{border-color:var(--accent)}
 .pchip .nom{font-weight:500}
+.pchip .pclub{display:block;font-weight:500}
 .pcard{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);background:var(--surface);border:1px solid var(--line);border-radius:14px;overflow:hidden}
 .pc-main{padding:24px;display:flex;flex-direction:column;gap:6px}
 .pc-main h1{font-size:clamp(2.6rem,7vw,4.2rem)}
@@ -715,7 +719,7 @@ html[data-screen="1"] .credit{display:none}
 </div>
 
 <dialog class="lb" id="clubAdminDlg" aria-label="Administrador de perfiles">
-  <div class="login" style="margin:0;max-width:420px">
+  <div class="login" style="margin:0 auto;max-width:420px">
     <div id="clubAdminBody"></div>
   </div>
 </dialog>
@@ -1902,7 +1906,8 @@ function loadClubState(){
 /* ================= Utilidades ================= */
 const nl2br = s => esc(s).replace(/\n/g,"<br>");
 const split = full => { const i=String(full).indexOf(", "); return i<0?{ap:String(full),nom:""}:{ap:full.slice(0,i),nom:full.slice(i+2)}; };
-const nameHTML = full => { const s=split(full); return `<span class="ap">${esc(s.ap)}</span>${s.nom?` <span class="nom">${esc(s.nom)}</span>`:""}`; };
+const nameHTML = full => { const s=split(full); const cl=isCircuitoClub()?playerClub(full):"";
+  return `<span class="ap">${esc(s.ap)}</span>${s.nom?` <span class="nom">${esc(s.nom)}</span>`:""}${cl?` <span class="pclub">${esc(cl)}</span>`:""}`; };
 const pill = p => p==null||p==="" ? `<span class="pill p0">—</span>` : `<span class="pill p${p}" title="${PTS[p]||""}">${p}</span>`;
 const joinY = arr => arr.length<2?arr.join(""):arr.slice(0,-1).join(", ")+" y "+arr[arr.length-1];
 function parseScore(str){
@@ -1971,6 +1976,13 @@ function findPlayer(name){
   return null;
 }
 function playerFoto(name){ return (data.jugadores&&data.jugadores[name]&&data.jugadores[name].foto)||""; }
+function playerClub(name){ return (data.jugadores&&data.jugadores[name]&&data.jugadores[name].club)||""; }
+/* El Circuito Abierto junta jugadores de varios clubes: ahí conviene mostrar el club de cada uno
+   junto al nombre, y dejar que cada jugador (no solo el admin) suba su propia foto de perfil. */
+function isCircuitoClub(){ const c=clubStore.get().find(x=>x.id===CLUB_ID); return !!(c&&c.circuito); }
+function canEditOwnFoto(name){ return !!(name && isCircuitoClub() && state.profile && state.profile===name); }
+/* Lista de clubes "reales" (no el propio Circuito Abierto) para sugerir en el campo Club */
+function clubNameOptions(){ return clubStore.get().filter(c=>!c.circuito).map(c=>c.nombre); }
 function roundsOf(tid,cat){ const r=M().resultados[tid]; return (r&&r[cat])||[]; }
 function playerMatches(name,allYears=false){
   const out=[];
@@ -2389,15 +2401,22 @@ function vPartidos(){
       ${tRow("Carrera",careerRow&&careerRow.pos,wC,msCareer.length-wC,titlesIn(catTorneos))}
     </div>`;
   const mediaStyle = foto ? ` style="background-image:url('${esc(foto)}')"` : "";
-  const fotoAdmin = state.admin ? `<div class="pc-media-edit">
+  const canFoto = state.admin || canEditOwnFoto(p.name);
+  const fotoAdmin = canFoto ? `<div class="pc-media-edit">
       <label class="btn ghost sm filebtn">${foto?"Cambiar foto":"Subir foto"}<input type="file" accept="image/*" id="upJugadorFoto"></label>
       ${foto?`<button class="btn ghost sm" data-act="rm-foto-jugador">Quitar</button>`:""}
     </div>` : "";
+  /* En el Circuito Abierto, cada jugador viene de un club distinto: se puede indicar cuál,
+     y lo edita el admin o el propio jugador sobre su perfil guardado. */
+  const canClub = isCircuitoClub() && (state.admin || isProfile);
+  const clubEdit = canClub ? `<label class="f pc-club-edit">Club<input id="pJugadorClub" list="clubOptsDl" autocomplete="off" placeholder="Club de origen (opcional)" value="${esc(playerClub(p.name))}"></label>
+      <datalist id="clubOptsDl">${clubNameOptions().map(n=>`<option value="${esc(n)}">`).join("")}</datalist>` : "";
   return `<section class="wrap page"><div class="page-tools">${yearSel()}</div>
     <div class="pcard"><div class="pc-main">
-        <h1 class="display">${esc(s.ap)}</h1><span class="sub">${esc(s.nom)}${s.nom?", ":""}Categoría ${esc(catName(p.cat))}${modNote()}${isProfile?' <span class="me-tag">Tu perfil</span>':""}</span>
+        <h1 class="display">${esc(s.ap)}</h1><span class="sub">${esc(s.nom)}${s.nom?", ":""}Categoría ${esc(catName(p.cat))}${modNote()}${isProfile?' <span class="me-tag">Tu perfil</span>':""}${isCircuitoClub()&&playerClub(p.name)&&!canClub?` <span class="pclub">${esc(playerClub(p.name))}</span>`:""}</span>
       <div class="pc-actions">${isProfile?`<button class="btn ghost sm" data-act="unprofile">Dejar de usar como mi perfil</button>`
         :`<button class="btn sm" data-act="profile">Guardar como mi perfil</button>`}<button class="btn ghost sm" data-act="pick">Elegir ${otroJugador()}</button></div>
+      ${clubEdit}
       ${pcTable}</div>
       <div class="pc-media"${mediaStyle}>${foto?"":`<span class="pc-media-ph" style="background:${clubColor(p.name)}">${initials(s.ap)}</span>`}${fotoAdmin}</div></div>
     ${stats}<h2 class="round-label">Temporada</h2><div class="tracks">${tracks||'<p class="muted">Sin torneos todavía.</p>'}</div>${mlist}${h2hHTML(p.name)}</section>`;
@@ -3141,7 +3160,8 @@ document.addEventListener("click",e=>{
     if(act==="profile"){ const n=state.view||state.profile; state.profile=n; store.set("perfil:"+genKey(),n); toast("Guardado como tu perfil"); render(); return; }
     if(act==="unprofile"){ state.view=state.profile; state.profile=""; store.set("perfil:"+genKey(),""); toast("Ya no es tu perfil"); render(); return; }
     if(act==="pick"){ state.picking=true; state.view=""; render(); return; }
-    if(act==="rm-foto-jugador"&&state.admin){ const name=state.picking?"":(state.view||state.profile);
+    if(act==="rm-foto-jugador"){ const name=state.picking?"":(state.view||state.profile);
+      if(!(state.admin||canEditOwnFoto(name))) return;
       if(name&&data.jugadores&&data.jugadores[name]){ delete data.jugadores[name].foto;
         if(saveData()){ if(state.draft) state.draft=clone(data); toast("Foto quitada"); } }
       render(); return; }
@@ -3174,14 +3194,23 @@ document.addEventListener("change",async e=>{
   if(id==="resT"){ syncDraft(); state.adminRes={t:el.value,c:""}; state.resRound=null; state.resIdx=null; render(); return; }
   if(id==="resC"){ syncDraft(); state.adminRes={t:document.getElementById("resT").value,c:el.value}; state.resRound=null; state.resIdx=null; render(); return; }
   if(id==="upInfoFoto"&&el.files[0]){ syncDraft(); try{ state.draft.info.foto=await downscale(el.files[0],1600); state.draft.info.modo="foto"; toast("Foto lista. Tocá Guardar para publicarla."); }catch(err){ toast("No se pudo leer la imagen"); } render(); return; }
-  if(id==="upJugadorFoto"&&el.files[0]&&state.admin){
+  if(id==="upJugadorFoto"&&el.files[0]){
     const name=state.picking?"":(state.view||state.profile); if(!name) return;
+    if(!(state.admin||canEditOwnFoto(name))) return;
     try{
       const foto=await downscale(el.files[0],1100);
       if(!data.jugadores) data.jugadores={};
       data.jugadores[name]={...(data.jugadores[name]||{}),foto};
       if(saveData()){ if(state.draft) state.draft=clone(data); toast("Foto actualizada"); } else toast("No se pudo guardar la foto");
     }catch(err){ toast("No se pudo leer la imagen"); }
+    render(); return;
+  }
+  if(id==="pJugadorClub"){
+    const name=state.picking?"":(state.view||state.profile); if(!name) return;
+    if(!(state.admin||(isCircuitoClub()&&state.profile&&state.profile===name))) return;
+    if(!data.jugadores) data.jugadores={};
+    data.jugadores[name]={...(data.jugadores[name]||{}),club:el.value.trim()};
+    if(saveData()){ if(state.draft) state.draft=clone(data); } 
     render(); return;
   }
   if(id==="upFotos"&&el.files.length){ syncDraft(); let ok=0;
