@@ -487,6 +487,18 @@ dialog.lb::backdrop{background:rgba(5,10,8,.88)}
 .clubadmin-row{display:grid;grid-template-columns:auto 1fr auto auto;gap:10px;align-items:center;background:var(--surface-2);border:1px solid var(--line);border-radius:10px;padding:8px 10px}
 .clubadmin-row .club-shield{width:36px;height:36px;font-size:.85rem}
 .clubadmin-row .cn{font-weight:700;font-size:.92rem;text-align:left}
+.club-banner{display:flex;align-items:center;gap:8px;background:var(--surface-2);border:1px solid var(--line);border-left:3px solid var(--accent);border-radius:10px;padding:9px 12px;font-size:.9rem;margin:0 0 4px}
+.club-banner .cb-dot{width:8px;height:8px;border-radius:50%;background:var(--accent);flex:none}
+.bk-list{display:flex;flex-direction:column;gap:8px}
+.bk-row{display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--surface-2);border:1px solid var(--line);border-radius:10px;padding:8px 10px}
+.bk-i{display:flex;flex-direction:column;gap:2px;text-align:left;min-width:0}
+.bk-i b{font-size:.88rem}
+.bk-i em{font-style:normal;font-size:.78rem;opacity:.7}
+.rescue-row{background:var(--surface-2);border:1px solid var(--line);border-radius:10px;padding:10px;margin-bottom:8px;text-align:left}
+.rescue-row .rr-head{display:flex;justify-content:space-between;gap:10px;font-size:.9rem}
+.rescue-row .rr-sum{font-size:.8rem;margin:2px 0 8px}
+.rescue-row .rr-act{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.rescue-row select{background:var(--surface);color:var(--text);border:1px solid var(--line);border-radius:8px;padding:6px 8px;font:inherit;font-size:.85rem}
 .exit-btn{background:none;border:1px solid var(--line);border-radius:8px;width:38px;height:38px;display:grid;place-items:center;cursor:pointer;color:var(--muted)}
 .exit-btn:hover{color:var(--text);border-color:var(--line-strong)}
 </style>
@@ -689,7 +701,8 @@ function bootApp(id, rol){
 function exitToGate(){
   try{ sessionStorage.removeItem("liga_sesion"); sessionStorage.removeItem("liga:admin"); }catch(e){}
   gateMode = state.rol==="jugador" ? "player" : "admin";
-  state.admin=false; state.draft=null; state.rol=""; CLUB_ID=""; gateSel=null; location.hash="";
+  state.admin=false; state.draft=null; state.rol=""; CLUB_ID=""; DATA_OWNER=""; gateSel=null; location.hash="";
+  data = clone(DEFAULT_DATA); // que no quede nada de un club colgado en memoria
   document.getElementById("appRoot").style.display="none";
   document.getElementById("gateRoot").style.display="";
   renderGate(); window.scrollTo(0,0);
@@ -705,6 +718,61 @@ let clubAdminAuth = false, clubAdminDraftEscudo = "", clubAdminEditing = null;
 document.getElementById("clubAdminLink").onclick = ()=>{ clubAdminAuth=false; clubAdminDraftEscudo=""; clubAdminEditing=null; renderClubAdmin(); clubAdminDlg.showModal(); };
 clubAdminDlg.addEventListener("click", e=>{ if(e.target===clubAdminDlg) clubAdminDlg.close(); });
 
+/* ---- Rescate de datos: busca en el navegador todos los bloques de informacion guardados
+   (los de cada club y los que quedaron del espacio viejo, sin club) y permite copiarlos
+   al club que corresponda. Sirve para recuperar datos que quedaron "sueltos". ---- */
+function blobResumen(json){
+  try{
+    const o = JSON.parse(json);
+    const mods = o.modalidades||{};
+    let tor=0, jug=0;
+    Object.values(mods).forEach(m=>{ tor += (m.torneos||[]).length;
+      Object.values(m.ranking||{}).forEach(rows=>{ jug += (rows||[]).length; }); });
+    const fotos=(o.fotos||[]).length, nov=(o.novedades||[]).length;
+    return `${tor} torneo${tor===1?"":"s"} · ${jug} jugador${jug===1?"":"es"} · ${fotos} foto${fotos===1?"":"s"} · ${nov} novedad${nov===1?"":"es"}`;
+  }catch(e){ return "no se pudo leer"; }
+}
+function scanBlobs(){
+  const out=[]; const clubes=clubStore.get();
+  let keys=[]; try{ keys=Object.keys(localStorage); }catch(e){ return out; }
+  keys.forEach(k=>{
+    let origen=null, id=null;
+    const mc = k.match(/^liga:c:([^:]+):(data5|data4|data3)$/);
+    if(mc){ id=mc[1]; const c=clubes.find(x=>x.id===id);
+      origen = c ? ("Club: "+c.nombre) : ("Club borrado ("+id+")"); }
+    else if(/^liga:(data5|data4|data3)$/.test(k)) origen="Espacio viejo (sin club)";
+    else if(/^liga:nocl:(data5|data4|data3)$/.test(k)) origen="Guardado sin club abierto";
+    if(!origen) return;
+    let v=null; try{ v=localStorage.getItem(k); }catch(e){}
+    if(!v) return;
+    out.push({key:k, club:id, origen, kb:Math.round(v.length/1024), resumen:blobResumen(v)});
+  });
+  return out.sort((a,b)=>b.kb-a.kb);
+}
+function copiarBlobAClub(key, destino){
+  let v=null; try{ v=localStorage.getItem(key); }catch(e){}
+  if(!v){ toast("Ese bloque ya no está"); return false; }
+  let obj; try{ obj=migrate(JSON.parse(v)); }catch(e){ toast("El bloque está dañado"); return false; }
+  const destKey = "liga:c:"+destino+":data5";
+  try{
+    const prev = localStorage.getItem(destKey);
+    if(prev){
+      if(!confirm("Ese club ya tiene informacion cargada. Se reemplaza por este bloque (se guarda una copia antes). ¿Seguir?")) return false;
+      const bkKey="liga:c:"+destino+":bk";
+      let arr=[]; try{ arr=JSON.parse(localStorage.getItem(bkKey)||"[]"); }catch(e){}
+      arr.unshift({ts:Date.now(),motivo:"Antes de recuperar datos",json:prev});
+      try{ localStorage.setItem(bkKey, JSON.stringify(arr.slice(0,BK_MAX))); }catch(e){}
+    }
+    localStorage.setItem(destKey, JSON.stringify(obj));
+  }catch(e){ toast("No entra: el navegador se quedó sin espacio"); return false; }
+  toast("Datos copiados al club");
+  return true;
+}
+function bajarJSON(nombre, obj){
+  const blob=new Blob([JSON.stringify(obj,null,2)],{type:"application/json"});
+  const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download=nombre;
+  document.body.appendChild(a); a.click(); a.remove();
+}
 function renderClubAdmin(){
   const body = document.getElementById("clubAdminBody");
   if(!clubAdminAuth){
@@ -749,9 +817,14 @@ function renderClubAdmin(){
         <button class="btn sm" id="cfSave">Guardar club</button>
       </div>
     </div>
+    <div class="block" style="margin-top:14px"><div class="block-head"><strong>Recuperar datos sueltos</strong></div>
+      <p class="hint" style="margin:0 0 8px">Cada club guarda su propia informacion por separado. Si quedo algun bloque sin dueño (de una version anterior o de un club borrado), aparece aca y lo podes copiar al club que corresponda.</p>
+      <div id="rescueList"></div>
+    </div>
     <div style="display:flex;justify-content:flex-end;margin-top:14px">
       <button class="btn ghost sm" id="clubAdminClose2">Cerrar</button>
     </div>`;
+  renderRescue();
   document.getElementById("clubAdminClose2").onclick=()=>clubAdminDlg.close();
   if(clubAdminEditing){
     const c = clubes.find(x=>x.id===clubAdminEditing);
@@ -779,7 +852,10 @@ function renderClubAdmin(){
   body.querySelectorAll("[data-delclub]").forEach(b=>b.onclick=()=>{
     const id=b.getAttribute("data-delclub");
     const c=clubStore.get().find(x=>x.id===id);
-    if(!confirm(`¿Eliminar el club "${c?c.nombre:""}"? Sus torneos, ranking y fotos guardados se pierden.`)) return;
+    if(!confirm(`¿Eliminar el club "${c?c.nombre:""}"? Sus torneos, ranking y fotos guardados se pierden. Los otros clubes no se tocan.`)) return;
+    try{ const raw=localStorage.getItem("liga:c:"+id+":data5");
+      if(raw && confirm("Antes de borrarlo, ¿descargamos una copia de sus datos?")) bajarJSON("respaldo-"+(c?c.nombre:id).replace(/[^a-z0-9]+/gi,"-").toLowerCase()+".json", JSON.parse(raw));
+    }catch(e){}
     clubStore.set(clubStore.get().filter(x=>x.id!==id));
     try{ const pre="liga:c:"+id+":"; Object.keys(localStorage).filter(k=>k.startsWith(pre)).forEach(k=>localStorage.removeItem(k)); }catch(e){}
     if(clubAdminEditing===id){ clubAdminEditing=null; clubAdminDraftEscudo=""; }
@@ -802,6 +878,32 @@ function renderClubAdmin(){
     toast("Club guardado");
     renderClubAdmin(); renderGate();
   };
+}
+
+function renderRescue(){
+  const cont = document.getElementById("rescueList"); if(!cont) return;
+  const blobs = scanBlobs(), clubes = clubStore.get();
+  if(!blobs.length){ cont.innerHTML = `<p class="muted" style="margin:0">No hay bloques guardados.</p>`; return; }
+  cont.innerHTML = blobs.map((b,i)=>`
+    <div class="rescue-row">
+      <div class="rr-head"><b>${esc(b.origen)}</b><span class="muted">${b.kb} KB</span></div>
+      <div class="muted rr-sum">${esc(b.resumen)}</div>
+      <div class="rr-act">
+        <select data-rdest="${i}">${clubes.map(c=>`<option value="${esc(c.id)}"${c.id===b.club?" selected":""}>${esc(c.nombre)}</option>`).join("")}</select>
+        <button class="btn ghost sm" data-rcopy="${i}">Copiar a este club</button>
+        <button class="btn ghost sm" data-rdown="${i}">Descargar</button>
+      </div>
+    </div>`).join("");
+  cont.querySelectorAll("[data-rcopy]").forEach(btn=>btn.onclick=()=>{
+    const i=+btn.getAttribute("data-rcopy"), b=blobs[i];
+    const sel=cont.querySelector(`[data-rdest="${i}"]`); if(!sel||!sel.value){ toast("Elegi un club"); return; }
+    if(copiarBlobAClub(b.key, sel.value)) renderRescue();
+  });
+  cont.querySelectorAll("[data-rdown]").forEach(btn=>btn.onclick=()=>{
+    const b=blobs[+btn.getAttribute("data-rdown")];
+    try{ bajarJSON("respaldo-"+b.key.replace(/[^a-z0-9]+/gi,"-")+".json", JSON.parse(localStorage.getItem(b.key))); }
+    catch(e){ toast("No se pudo descargar"); }
+  });
 }
 
 renderGate();
@@ -840,13 +942,34 @@ const DEFAULT_DATA = {
 /* Los datos de cada club (torneos, ranking, fotos, perfil, filtros...) viven bajo "liga:c:<idClub>:<clave>".
    Solo la superficie y el tema claro/oscuro son globales. Antes de entrar a un club (CLUB_ID vacío) se usa el espacio viejo "liga:". */
 let CLUB_ID = "";
-const GLOBAL_KEYS = new Set(["surface","theme"]);
-const sk = k => (GLOBAL_KEYS.has(k) || !CLUB_ID) ? "liga:"+k : "liga:c:"+CLUB_ID+":"+k;
+let DATA_OWNER = "";            // club dueño de lo que hay cargado en memoria
+const GLOBAL_KEYS = new Set(["surface","theme"]); // lo único que se comparte entre clubes
+const DATA_KEYS = ["data5","data4","data3"];
+const ck = (id,k) => "liga:c:"+id+":"+k;
+/* Clave real en localStorage. Si NO hay un club abierto, todo lo que no sea global
+   va a un espacio descartable ("liga:nocl:"), nunca al espacio de un club ni al viejo
+   espacio global. Así es imposible que lo que se escribe sin club pise los datos de
+   Mercedes, Ateneo o cualquier otro. */
+const sk = k => GLOBAL_KEYS.has(k) ? "liga:"+k : (CLUB_ID ? ck(CLUB_ID,k) : "liga:nocl:"+k);
 const store = {
   get(k,d){try{const v=localStorage.getItem(sk(k));return v===null?d:v}catch(e){return d}},
   set(k,v){try{localStorage.setItem(sk(k),v);return true}catch(e){return false}},
   del(k){try{localStorage.removeItem(sk(k))}catch(e){}}
 };
+/* ---- Copias de seguridad automáticas, por club ---- */
+const BK_MAX = 6;
+function bkList(id){ try{ return JSON.parse(localStorage.getItem(ck(id||CLUB_ID,"bk"))||"[]"); }catch(e){ return []; } }
+function bkSave(motivo){
+  if(!CLUB_ID) return;
+  let arr = bkList();
+  arr.unshift({ts:Date.now(), motivo:motivo||"Copia", json:JSON.stringify(data)});
+  for(let n=Math.min(arr.length,BK_MAX); n>=1; n--){
+    try{ localStorage.setItem(ck(CLUB_ID,"bk"), JSON.stringify(arr.slice(0,n))); return; }catch(e){}
+  }
+  try{ localStorage.removeItem(ck(CLUB_ID,"bk")); }catch(e){}
+}
+const clubName = () => { const c = clubStore.get().find(x=>x.id===CLUB_ID); return c ? c.nombre : "este club"; };
+const bkFecha = ts => new Date(ts).toLocaleString("es-AR",{day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit"});
 /* Datos que existían antes de separar por club: pasan al primer club al que entre un administrador (se mueven, no se duplican). */
 function claimLegacyData(){
   try{
@@ -906,7 +1029,13 @@ function loadData(){ try{
 let data = loadData();
 normalize(data);
 function saveData(){
+  /* Doble candado: solo se escribe si hay un club abierto y si lo que está en memoria
+     pertenece a ese mismo club. Evita que una edición vieja se guarde encima de otro club. */
+  if(!CLUB_ID){ toast("No hay ningún club abierto: no se guardó nada."); return false; }
+  if(state && state.rol==="jugador"){ return false; } // modo jugador: solo lectura
+  if(DATA_OWNER && DATA_OWNER!==CLUB_ID){ toast("Los datos cargados son de otro club: no se guardó nada."); return false; }
   if(!store.set("data5",JSON.stringify(data))){ toast("No se pudo guardar: el navegador se quedó sin espacio. Probá con menos fotos."); return false; }
+  DATA_OWNER = CLUB_ID;
   return true;
 }
 const loadProfile = key => store.get("perfil:"+key,"");
@@ -923,7 +1052,7 @@ if(!data.modalidades[genKey()]){ state.mod="singles"; state.genero="hombres"; }
 state.profile=loadProfile(genKey());
 /* Al entrar a un club se cargan sus datos y su estado (modalidad, categoría, año, perfil) desde cero */
 function loadClubState(){
-  data = loadData(); normalize(data);
+  data = loadData(); normalize(data); DATA_OWNER = CLUB_ID;
   state.mod=store.get("mod","singles"); state.genero=store.get("genero","hombres");
   state.cat=store.get("cat",""); state.anio=store.get("anio","");
   if(!MODS.some(([v])=>v===state.mod)) state.mod="singles";
@@ -1526,14 +1655,22 @@ function aFotos(){
       <div class="pa-body"><input data-bind="fotos.${i}.texto" value="${esc(x.texto)}" placeholder="Descripción" aria-label="Descripción de la foto ${i+1}"><input data-bind="fotos.${i}.anio" value="${esc(x.anio||"")}" placeholder="Año" inputmode="numeric" style="flex:0 0 64px" aria-label="Año de la foto ${i+1}">${IB("del-f",i,"trash","Borrar foto")}</div></div>`).join("")}</div></div>`;
 }
 function aDatos(){
+  const bks = bkList();
   return `<div class="panel"><h2>Datos</h2>
+    <div class="club-banner"><span class="cb-dot"></span>Estás editando <b>${esc(clubName())}</b>. Todo lo que cargues o borres acá afecta solo a este club.</div>
     <p class="hint" style="margin:0">Todo lo que editás se guarda en este navegador. Para pasarlo a otra computadora o tener una copia, exportalo.</p>
     <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" data-act="export">Exportar copia</button>
       <label class="btn ghost filebtn">Importar copia<input type="file" accept="application/json,.json" id="importFile"></label>
     </div>
     <p class="hint" style="margin:0">Si importás un archivo que trae solo rankings y torneos (sin información, novedades ni fotos), se reemplazan únicamente esas modalidades y el resto queda como está.</p>
+    <div class="block" style="margin-top:4px"><div class="block-head"><strong>Copias de seguridad de ${esc(clubName())}</strong></div>
+      <p class="hint" style="margin:0 0 8px">La app guarda una copia sola antes de cada borrado y cada vez que apretás "Guardar copia ahora". Se quedan las últimas ${BK_MAX}.</p>
+      ${bks.length?`<div class="bk-list">${bks.map((b,i)=>`<div class="bk-row"><span class="bk-i"><b>${esc(bkFecha(b.ts))}</b><em>${esc(b.motivo||"")}</em></span>
+        <button class="btn ghost sm" data-act="restore" data-i="${i}">Restaurar</button></div>`).join("")}</div>`:`<p class="muted" style="margin:0">Todavía no hay copias.</p>`}
+      <div style="margin-top:10px"><button class="btn ghost sm" data-act="bk-now">Guardar copia ahora</button></div>
+    </div>
     <div class="danger-zone"><strong>Eliminar información</strong>
-      <p class="hint" style="margin:0">No se puede deshacer. Si querés, exportá una copia antes.</p>
+      <p class="hint" style="margin:0">Borra solo ${esc(clubName())}. Igual se guarda una copia antes, por las dudas.</p>
       <div style="display:flex;gap:8px;flex-wrap:wrap">
         <button class="btn danger" data-act="wipe-mod">Eliminar solo ${esc(modGenLabel())}</button>
         <button class="btn danger" data-act="reset">Eliminar toda la información</button></div></div>
@@ -1606,13 +1743,22 @@ function adminAction(act,el){
       if(saveData()) toast("Cambios guardados"); else data=prev;
       break; }
     case "export": { const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"}); const a=document.createElement("a");
-      a.href=URL.createObjectURL(blob); a.download="liga-de-padres-datos.json"; document.body.appendChild(a); a.click(); a.remove(); return; }
-    case "reset": if(!confirm("¿Eliminar TODA la información? Se borran torneos, rankings, resultados, horarios, novedades y fotos de todas las modalidades.")) return;
-      if(!confirm("¿Seguro? Esta acción no se puede deshacer.")) return;
-      data=clone(DEFAULT_DATA); saveData(); state.draft=clone(data); state.closedTours=null; toast("Se eliminó toda la información"); break;
-    case "wipe-mod": if(!confirm(`¿Eliminar todo lo de ${modGenLabel().toLowerCase()}? Se borran sus categorías, torneos, ranking y resultados.`)) return;
+      a.href=URL.createObjectURL(blob); a.download="datos-"+clubName().replace(/[^a-z0-9]+/gi,"-").toLowerCase()+".json"; document.body.appendChild(a); a.click(); a.remove(); return; }
+    case "reset": if(!confirm(`¿Eliminar TODA la información de ${clubName()}? Se borran torneos, rankings, resultados, horarios, novedades y fotos de todas las modalidades. Los demás clubes no se tocan.`)) return;
+      if(!confirm(`Escribí bien: esto borra SOLO ${clubName()}. ¿Seguir?`)) return;
+      bkSave("Antes de eliminar todo");
+      data=clone(DEFAULT_DATA); saveData(); state.draft=clone(data); state.closedTours=null; toast(`Se eliminó la información de ${clubName()}`); break;
+    case "wipe-mod": if(!confirm(`¿Eliminar todo lo de ${modGenLabel().toLowerCase()} en ${clubName()}? Se borran sus categorías, torneos, ranking y resultados.`)) return;
+      bkSave("Antes de eliminar "+modGenLabel());
       data.modalidades[genKey()]=emptyModalidad(); data.info.horarios=(data.info.horarios||[]).filter(h=>(h.mod||"singles-hombres")!==genKey());
       saveData(); state.draft=clone(data); state.closedTours=null; toast(`Se eliminó ${modGenLabel().toLowerCase()}`); break;
+    case "restore": { const arr=bkList(), b=arr[n];
+      if(!b){ toast("No hay copia"); return; }
+      if(!confirm(`¿Restaurar la copia del ${bkFecha(b.ts)} en ${clubName()}? Lo que hay ahora se reemplaza (se guarda una copia antes).`)) return;
+      bkSave("Antes de restaurar");
+      try{ data=normalize(migrate(JSON.parse(b.json))); }catch(e){ toast("La copia está dañada"); return; }
+      saveData(); state.draft=clone(data); state.closedTours=null; toast("Copia restaurada"); break; }
+    case "bk-now": bkSave("Copia manual"); toast("Copia guardada"); break;
     case "logout": logout(); return;
   }
   render();
@@ -1723,15 +1869,17 @@ document.addEventListener("change",async e=>{
     for(const f of el.files){ try{ state.draft.fotos.push({src:await downscale(f),texto:"",anio:(yearsOf(DM())[0]||String(new Date().getFullYear()))}); ok++; }catch(err){} }
     toast(`${ok} foto${ok===1?"":"s"} lista${ok===1?"":"s"}. Tocá Guardar para publicarlas.`); render(); return; }
   if(id==="importFile"&&el.files[0]){
+    if(!CLUB_ID){ toast("Entrá a un club antes de importar"); el.value=""; return; }
     try{ const raw=JSON.parse(await el.files[0].text());
+      bkSave("Antes de importar");
       const partial=raw&&raw.modalidades&&!raw.info&&!raw.novedades&&!raw.fotos&&Object.keys(raw.modalidades).every(k=>k.includes("-"));
       if(partial){
         const ks=Object.keys(raw.modalidades);
-        if(!confirm(`Este archivo trae: ${ks.map(k=>MODCOMBO_LABEL()[k]||k).join(", ")}. Se reemplaza solo eso. ¿Seguir?`)) { el.value=""; return; }
+        if(!confirm(`Este archivo trae: ${ks.map(k=>MODCOMBO_LABEL()[k]||k).join(", ")}. Se reemplaza solo eso en ${clubName()}. ¿Seguir?`)) { el.value=""; return; }
         ks.forEach(k=>{ data.modalidades[k]=raw.modalidades[k]; });
       } else {
         const obj=migrate(raw); if(!obj.modalidades) throw 0;
-        if(!confirm("Este archivo es una copia completa y reemplaza toda la información. ¿Seguir?")) { el.value=""; return; }
+        if(!confirm(`Este archivo es una copia completa y reemplaza toda la información de ${clubName()}. ¿Seguir?`)) { el.value=""; return; }
         data=Object.assign(clone(DEFAULT_DATA),obj);
       }
       normalize(data); saveData(); state.draft=clone(data); state.closedTours=null; state.anio=""; toast("Datos importados"); }
