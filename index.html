@@ -362,6 +362,16 @@ svg.tchev{width:20px;height:20px;flex-shrink:0;transition:transform .18s;color:v
 .champ-card svg{width:24px;height:24px}
 .champ-card small{display:block;font-weight:700;font-size:.68rem;opacity:.8}
 .champ-card strong{display:block;font-stretch:70%;font-weight:900;font-size:1.15rem;line-height:1.1;overflow-wrap:break-word}
+.sb-name .tbd{font-style:italic;opacity:.65}
+/* Inscriptos y sorteo (panel del administrador) */
+.insc-row{display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end}
+.insc-row .f{flex:1 1 240px}
+.dmatch{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(0,.8fr) 8.5rem;gap:8px;align-items:end;padding:10px 0;border-top:1px solid var(--line)}
+.block-head + .dmatch{border-top:0}
+.dm-static{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:8px 10px;font-weight:600;font-size:.95rem;color:var(--text);min-height:38px;display:flex;align-items:center;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.dm-static.tbd{color:var(--muted);font-style:italic;font-weight:500}
+.dm-dup select{border-color:var(--loss)}
+@media (max-width:760px){.dmatch{grid-template-columns:1fr 1fr}}
 
 /* ================= Mis partidos ================= */
 .picker h1{font-size:clamp(2.6rem,8vw,4.6rem)}
@@ -1746,13 +1756,15 @@ const ROUNDS = ["16avos","Octavos","Cuartos","Semifinal","Final"];
 const PTS = {100:"Campeón",80:"Final",60:"Semifinal",40:"Cuartos",20:"Octavos",10:"16avos",5:"Ronda previa"};
 const allows5 = t => (+t.anio||0) && +t.anio<=2025; // la ronda previa (5 pts) existió solo hasta 2025
 const PTS_IDX = {5:0,10:0,20:1,40:2,60:3,80:4,100:5};
+const BYE = "BYE"; // en un sorteo: lugar sin rival (el jugador pasa directo a la ronda siguiente)
+const DRAW_ROUNDS = {2:["Final"],4:["Semifinal","Final"],8:["Cuartos","Semifinal","Final"],16:["Octavos","Cuartos","Semifinal","Final"],32:["16avos","Octavos","Cuartos","Semifinal","Final"]};
 const MODS = [["singles","Singles"],["dobles","Dobles"]];
 const MOD_LABEL = {singles:"Singles",dobles:"Dobles"};
 const GENS = [["hombres","Hombres"],["damas","Damas"]];
 const GEN_LABEL = {hombres:"Hombres",damas:"Damas"};
 const MODCOMBOS = () => MODS.flatMap(([mv,ml])=>GENS.map(([gv,gl])=>[`${mv}-${gv}`,`${ml} ${gl}`]));
 const MODCOMBO_LABEL = () => Object.fromEntries(MODCOMBOS());
-const emptyModalidad = () => ({categorias:[],torneos:[],ranking:{},resultados:{}});
+const emptyModalidad = () => ({categorias:[],torneos:[],ranking:{},resultados:{},inscritos:{},sorteos:{}});
 
 const DEFAULT_DATA = {
   club:{ direccion:"", mapa:"", redes:{instagram:"",facebook:"",whatsapp:"",tiktok:"",youtube:"",web:""} },
@@ -1859,6 +1871,14 @@ function normalize(d){ // asegura que cada torneo tenga año (lo toma del nombre
     for(let k=1;k<r.length;k++){ const v=r[k], t=(m.torneos||[])[k-1];
       if(v!=null&&v!==""&&!OK.includes(+v)&&!(+v===5&&t&&allows5(t))) r[k]=null; }
   })));
+  // inscriptos y sorteos: estructura válida (un sorteo con un tamaño raro se descarta)
+  Object.values(d.modalidades||{}).forEach(m=>{
+    if(!m.inscritos||typeof m.inscritos!=="object") m.inscritos={};
+    if(!m.sorteos||typeof m.sorteos!=="object") m.sorteos={};
+    Object.values(m.inscritos).forEach(o=>Object.keys(o||{}).forEach(c=>{ o[c]=(Array.isArray(o[c])?o[c]:[]).map(x=>String(x==null?"":x).trim()).filter(Boolean); }));
+    Object.values(m.sorteos).forEach(o=>Object.keys(o||{}).forEach(c=>{ const s=o[c];
+      if(!s||!Array.isArray(s.slots)||!DRAW_ROUNDS[s.slots.length]) delete o[c]; else s.slots=s.slots.map(x=>String(x==null?"":x)); }));
+  });
   return d;
 }
 function loadData(){ try{
@@ -1916,7 +1936,7 @@ const split = full => {
   return j<0 ? {ap:s,nom:""} : {ap:s.trim().slice(0,j), nom:s.trim().slice(j+1)};
 };
 const nameHTML = full => { const s=split(full); const info=isCircuitoClub()?playerClubInfo(full):null;
-  const clubTag = info ? `<span class="pclub">${miniShieldHTML(info)}<span class="pclub-name">${esc(info.nombre)}</span></span>` : "";
+  const clubTag = info ? `<span class="pclub">${miniShieldHTML(info)}</span>` : "";
   return `<span class="ap">${esc(s.ap)}</span>${s.nom?` <span class="nom">${esc(s.nom)}</span>`:""}${clubTag?` ${clubTag}`:""}`; };
 const pill = p => p==null||p==="" ? `<span class="pill p0">—</span>` : `<span class="pill p${p}" title="${PTS[p]||""}">${p}</span>`;
 const joinY = arr => arr.length<2?arr.join(""):arr.slice(0,-1).join(", ")+" y "+arr[arr.length-1];
@@ -2399,6 +2419,7 @@ function vResultados(tid,c){
 function roundsOfM(m,tid,cat){ const r=m.resultados[tid]; return (r&&r[cat])||[]; }
 /* Devuelve el cuadro dibujado, o "" si todavía faltan cruces. Recibe la modalidad para poder usarse también desde el modo pantalla. */
 function bracketHTML(m,t,cid){
+  const sd=drawOf(m,t.id,cid); if(sd) return drawBracketHTML(m,t,cid,sd); // hay sorteo: el cuadro sale de ahí y se completa con los resultados
   const all=roundsOfM(m,t.id,cid), names=["Octavos","Cuartos","Semifinal","Final"], need=[8,4,2,1];
   const rounds=names.map(n=>all.find(r=>r.name===n));
   if(!rounds.every((r,i)=>r&&r.m.length===need[i])) return "";
@@ -2423,13 +2444,14 @@ function bracketHTML(m,t,cid){
 function vCuadro(tid,c){
   const {t,cid}=resolveTour(tid,c);
   if(!t||!cid) return vTorneos();
-  const b=bracketHTML(M(),t,cid);
+  const b=bracketHTML(M(),t,cid), sorteo=drawOf(M(),t.id,cid), ins=inscList(M(),t.id,cid);
   if(!b) return `<section class="wrap page">${tourHead(t,cid,"draw")}<div class="empty"><strong>El cuadro todavía no está completo</strong>
-    Para dibujarlo hacen falta todos los cruces desde octavos. Mientras tanto podés ver los partidos cargados.<br>
+    ${ins.length?`Todavía no se hizo el sorteo.`:`Para dibujarlo hacen falta todos los cruces desde octavos. Mientras tanto podés ver los partidos cargados.`}<br>
+    ${ins.length?`<span class="muted"><b>Inscriptos (${ins.length}):</b> ${ins.map(esc).join(" · ")}</span><br>`:""}
     <a class="btn ghost" href="#resultados/${t.id}/${cid}">Ver resultados</a></div></section>`;
   return `<section class="wrap page">${tourHead(t,cid,"draw")}
     ${b}
-    <p class="note">El cuadro arranca en octavos. Los 16avos están en <a href="#resultados/${t.id}/${cid}">Resultados</a>.</p></section>`;
+    <p class="note">${sorteo?`Los ganadores avanzan solos a medida que se cargan los resultados.`:`El cuadro arranca en octavos. Los 16avos están en <a href="#resultados/${t.id}/${cid}">Resultados</a>.`}</p></section>`;
 }
 
 function vPartidos(){
@@ -2520,9 +2542,9 @@ const P = rest => `modalidades.${genKey()}.${rest}`;
 function vAdmin(){
   if(!state.admin) return `<section class="wrap page"><div class="empty"><strong>Sección solo para administradores</strong>Para editar, entrá con tu club desde la pantalla de inicio.<br><button class="btn ghost" data-act="exit-club">Ir a la pantalla de inicio</button></div></section>`;
   if(!state.draft) state.draft=clone(data);
-  const tabs=[["info","Información"],["novedades","Novedades"],["categorias","Categorías"],["torneos","Torneos"],["ranking","Ranking"],["resultados","Resultados"],["fotos","Fotos"],["club","Ubicación y redes"],["datos","Datos"]];
-  const perMod=["categorias","torneos","ranking","resultados"].includes(state.adminTab);
-  const body={info:aInfo,novedades:aNews,categorias:aCats,torneos:aTorneos,ranking:aRanking,resultados:aRes,fotos:aFotos,club:aClub,datos:aDatos}[state.adminTab]();
+  const tabs=[["info","Información"],["novedades","Novedades"],["categorias","Categorías"],["torneos","Torneos"],["sorteo","Inscriptos y sorteo"],["ranking","Ranking"],["resultados","Resultados"],["fotos","Fotos"],["club","Ubicación y redes"],["datos","Datos"]];
+  const perMod=["categorias","torneos","sorteo","ranking","resultados"].includes(state.adminTab);
+  const body={info:aInfo,novedades:aNews,categorias:aCats,torneos:aTorneos,sorteo:aSorteo,ranking:aRanking,resultados:aRes,fotos:aFotos,club:aClub,datos:aDatos}[state.adminTab]();
   const players=[...new Set(Object.values(DM().ranking).flat().map(r=>r[0]))].sort();
   return `<section class="wrap page">
     <div class="page-head"><div><h1 class="display">Panel</h1><p class="sub">Los cambios se ven en el sitio cuando tocás Guardar.</p></div></div>
@@ -2668,7 +2690,7 @@ function aRes(){
       <label class="f">Categoría${cs.length>1?"":" (la del torneo)"}<select id="resC">${cs.map(k=>`<option value="${esc(k.id)}"${k.id===c?" selected":""}>Cat. ${esc(k.nombre)}</option>`).join("")}</select></label></div>
     <div class="scroll-x"><div class="seg" role="group" aria-label="Cómo cargar"><button type="button" data-resview="partido" aria-pressed="${mode==="partido"}">Un partido a la vez</button><button type="button" data-resview="tabla" aria-pressed="${mode==="tabla"}">Tabla</button></div></div>
     ${mode==="partido"?resCard(rs,base):resTable(rs,base)}
-    <p class="hint" style="margin:0">Para que se dibuje el cuadro hacen falta 8 partidos en octavos, 4 en cuartos, 2 en semis y la final, en el orden del cuadro.</p></div>`;
+    <p class="hint" style="margin:0">${drawOf(d,t,c)?"Este cuadro sale del sorteo (pestaña Inscriptos y sorteo): los ganadores avanzan solos si el resultado usa los mismos nombres del cuadro.":"Para que se dibuje el cuadro hacen falta 8 partidos en octavos, 4 en cuartos, 2 en semis y la final, en el orden del cuadro."}</p></div>`;
 }
 function aFotos(){
   const f=state.draft.fotos;
@@ -2742,6 +2764,7 @@ function downscale(file,max=1400){
 }
 const swap=(arr,i,j)=>{ if(j<0||j>=arr.length) return; [arr[i],arr[j]]=[arr[j],arr[i]]; };
 
+const roundsOf_ = (m,t,c) => roundsOfM(m,t,c).some(r=>r.m.length);
 function adminAction(act,el){
   const d=state.draft, m=DM(), i=el.dataset.i!=null?el.dataset.i:null, n=+i;
   syncDraft();
@@ -2759,6 +2782,7 @@ function adminAction(act,el){
       if(!confirm(`¿Borrar la Cat. ${c.nombre} de ${modGenLabel().toLowerCase()}? Se borran su ranking, sus finales y sus resultados.`)) return;
       m.categorias.splice(n,1); delete m.ranking[c.id]; m.torneos.forEach(t=>{ delete finOf(t)[c.id]; if(t.cats) t.cats=t.cats.filter(x=>x!==c.id); });
       Object.values(m.resultados).forEach(r=>delete r[c.id]);
+      Object.values(m.inscritos||{}).forEach(r=>delete r[c.id]); Object.values(m.sorteos||{}).forEach(r=>delete r[c.id]);
       d.info.horarios.forEach(h=>{ if((h.mod||"singles-hombres")===genKey()&&h.cat===c.id) h.cat=""; }); break; }
     case "up-c": swap(m.categorias,n,n-1); break;
     case "down-c": swap(m.categorias,n,n+1); break;
@@ -2768,13 +2792,36 @@ function adminAction(act,el){
       m.torneos.push({anio:ny,cats:m.categorias.map(c=>c.id),id:nid,etiqueta:`${m.torneos.length+1}.º torneo`,nombre:"Torneo nuevo",fechas:"",estado:"Próximo",finales:f});
       Object.values(m.ranking).forEach(rows=>rows.forEach(r=>r.push(null))); break; }
     case "del-t": if(!confirm(`¿Borrar ${m.torneos[n].nombre}? También se borran sus puntos del ranking y sus resultados.`)) return;
-      delete m.resultados[m.torneos[n].id]; m.torneos.splice(n,1); Object.values(m.ranking).forEach(rows=>rows.forEach(r=>r.splice(n+1,1))); break;
+      { const tid=m.torneos[n].id; delete m.resultados[tid]; if(m.inscritos) delete m.inscritos[tid]; if(m.sorteos) delete m.sorteos[tid]; } m.torneos.splice(n,1); Object.values(m.ranking).forEach(rows=>rows.forEach(r=>r.splice(n+1,1))); break;
     case "add-r": m.ranking[state.adminCat].push(["Apellido, Nombre",...m.torneos.map(()=>null)]); break;
     case "del-r": m.ranking[state.adminCat].splice(n,1); break;
     case "up-r": case "down-r": { const c=state.adminCat, rows=m.ranking[c], y=curYear(), to=act==="up-r"?n-1:n+1;
       if(y==="todos"){ const v=adminOrder(m,c); swap(rows,v[n],v[to]); }
       else { const names=adminOrder(m,c).map(g=>rows[g][0]); swap(names,n,to); m.desempate=m.desempate||{}; m.desempate[y]=m.desempate[y]||{}; m.desempate[y][c]=names; }
       break; }
+    case "add-insc": case "add-insc-bulk": case "insc-from-rank": {
+      const {t,c}=state.adminRes; if(!t||!c) return;
+      let names=[];
+      if(act==="add-insc"){ const inp=document.getElementById("inscNew"); names=[inp?inp.value:""]; }
+      else if(act==="add-insc-bulk"){ const ta=document.getElementById("inscBulk"); names=String(ta?ta.value:"").split(/\r?\n/); }
+      else names=(m.ranking[c]||[]).map(r=>r[0]);
+      names=names.map(x=>String(x||"").trim()).filter(Boolean);
+      if(!names.length){ toast(act==="insc-from-rank"?"El ranking de esta categoría está vacío":"Escribí un nombre"); return; }
+      const r=inscAdd(m,t,c,names);
+      toast(r.added?`${r.added===1?"Se agregó 1 inscripto":"Se agregaron "+r.added+" inscriptos"}${r.dup?` (${r.dup} ya ${r.dup===1?"estaba":"estaban"})`:""}`:"Ya estaban inscriptos");
+      render(); const inp=document.getElementById("inscNew"); if(inp&&act==="add-insc") inp.focus(); return; }
+    case "del-insc": { const {t,c}=state.adminRes, l=inscList(m,t,c); l.splice(n,1); break; }
+    case "draw-auto": case "draw-blank": { const {t,c}=state.adminRes, tour=m.torneos.find(x=>x.id===t), ins=inscList(m,t,c);
+      if(ins.length<2){ toast("Hacen falta al menos 2 inscriptos para sortear"); return; }
+      if(ins.length>32){ toast("El cuadro admite hasta 32 inscriptos"); return; }
+      if(drawOf(m,t,c)&&!confirm("Ya hay un cuadro sorteado. ¿Reemplazarlo?"+(roundsOf_(m,t,c)?" Los resultados ya cargados no se borran, pero pueden dejar de coincidir con el nuevo cuadro.":""))) return;
+      const seedChk=document.getElementById("drawSeed"), useSeeds=seedChk?seedChk.checked:false; state.drawSeed=useSeeds;
+      m.sorteos=m.sorteos||{}; m.sorteos[t]=m.sorteos[t]||{};
+      m.sorteos[t][c]={slots:act==="draw-auto"?makeDraw(m,tour,c,ins,useSeeds):new Array(drawSizeFor(ins.length)).fill("")};
+      toast(act==="draw-auto"?"Cuadro sorteado. Podés cambiar lo que quieras a mano.":"Cuadro vacío: elegí quién va en cada lugar"); break; }
+    case "draw-clear": { const {t,c}=state.adminRes;
+      if(!confirm("¿Borrar el cuadro sorteado? Los inscriptos y los resultados cargados no se tocan.")) return;
+      if(m.sorteos&&m.sorteos[t]) delete m.sorteos[t][c]; break; }
     case "add-m": m.resultados[state.adminRes.t][state.adminRes.c][n].m.push(["","",""]); break;
     case "add-m2": { const arr=m.resultados[state.adminRes.t][state.adminRes.c][n].m; arr.push(["","",""]); state.resRound=n; state.resIdx=arr.length-1; break; }
     case "swap-m": { const [ri,mi]=i.split(".").map(Number), mm=m.resultados[state.adminRes.t][state.adminRes.c][ri].m[mi];
@@ -3056,6 +3103,207 @@ function scoreFromGrid(card){
 }
 document.addEventListener("input",e=>{ const d=e.target.dataset; if(d&&(d.set!=null||d.scflag)) scoreFromGrid(e.target.closest("[data-mcard]")); });
 
+/* ================= Inscriptos y sorteo ================= */
+/* Inscriptos: m.inscritos[idTorneo][idCat] = ["Apellido, Nombre", ...]  (en dobles: "Perez, Juan / Lopez, Pedro").
+   Sorteo:     m.sorteos[idTorneo][idCat]   = {slots:[...]} con 2, 4, 8, 16 o 32 lugares. Los lugares 2k y 2k+1 se enfrentan
+               en la primera ronda. "BYE" = pasa directo, "" = lugar sin asignar.
+   Los resultados NO se guardan acá: siguen en m.resultados, y los ganadores avanzan solos en el cuadro. */
+const sideKey = n => teamParts(n).map(normName).sort().join("|");
+const inscList = (m,tid,cid) => (m.inscritos&&m.inscritos[tid]&&m.inscritos[tid][cid])||[];
+const drawOf = (m,tid,cid) => { const s=m.sorteos&&m.sorteos[tid]&&m.sorteos[tid][cid]; return s&&Array.isArray(s.slots)&&DRAW_ROUNDS[s.slots.length]?s:null; };
+const drawSizeFor = n => { let s=2; while(s<n) s*=2; return s; };
+const seedOrder = size => { let o=[1,2]; while(o.length<size){ const n=o.length*2+1; o=o.flatMap(s=>[s,n-s]); } return o; }; // 1-8, 4-5, 2-7, 3-6...
+function resRounds(m,tid,cid){ // las 5 rondas de resultados de una categoría, siempre completas (igual que el panel Resultados)
+  m.resultados=m.resultados||{}; m.resultados[tid]=m.resultados[tid]||{};
+  m.resultados[tid][cid]=ROUNDS.map(n=>({name:n,m:((m.resultados[tid][cid]||[]).find(r=>r.name===n)||{m:[]}).m}));
+  return m.resultados[tid][cid];
+}
+/* Si el nombre coincide (sin coma, tildes ni mayúsculas) con uno del ranking, usa la grafía del ranking */
+function canonName(m,name){
+  const known=[...new Set(Object.values(m.ranking||{}).flat().map(r=>r[0]))];
+  return teamParts(name).map(p=>{ const k=normName(p); return known.find(x=>normName(x)===k)||p.trim(); }).join(" / ");
+}
+function inscAdd(m,tid,cid,names){
+  m.inscritos=m.inscritos||{}; m.inscritos[tid]=m.inscritos[tid]||{};
+  const list=m.inscritos[tid][cid]=m.inscritos[tid][cid]||[]; let added=0, dup=0;
+  names.forEach(raw=>{ const nm=canonName(m,String(raw||"").trim()); if(!nm) return;
+    if(list.some(x=>sideKey(x)===sideKey(nm))){ dup++; return; }
+    list.push(nm); added++; });
+  return {added,dup};
+}
+/* Puntos del ranking de un jugador ANTES de este torneo: los del mismo año (y, de desempate, los de todos los años) */
+function seedPoints(m,t,cid,name){
+  const k=normName(name), row=(m.ranking[cid]||[]).find(r=>normName(r[0])===k), ti=m.torneos.indexOf(t);
+  let y=0, all=0; if(!row) return {y,all};
+  m.torneos.forEach((x,i)=>{ if(i>=ti||!applies(x,cid)) return; const v=+row[i+1]||0; all+=v; if(String(x.anio)===String(t.anio)) y+=v; });
+  return {y,all};
+}
+/* Sorteo automático: por defecto todo al azar. Si se tilda "Cabezas de serie": los de más puntos van separados (1 y 2 en mitades opuestas, 3 y 4 al azar en los otros
+   cuartos, etc.) y reciben los BYE; el resto se sortea al azar. Sin cabezas de serie, todo al azar. */
+function makeDraw(m,t,cid,names,useSeeds){
+  const n=names.length, size=drawSizeFor(n);
+  const rnd=a=>{ a=a.slice(); for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; };
+  const pw=nm=>{ let y=0, all=0; teamParts(nm).forEach(p=>{ const s=seedPoints(m,t,cid,p); y+=s.y; all+=s.all; }); return {nm,y,all}; };
+  let seeded=[], rest=rnd(names);
+  if(useSeeds){
+    const top=rest.map(pw).filter(x=>x.y>0||x.all>0).sort((a,b)=>b.y-a.y||b.all-a.all);
+    seeded=top.slice(0,Math.min(size>=32?8:size>=16?4:2,top.length)).map(x=>x.nm);
+    rest=rest.filter(x=>!seeded.includes(x));
+  }
+  const pos=new Array(size+1).fill(""); let k=0;
+  [[1],[2],[3,4],[5,6,7,8]].forEach(g=>{ const take=seeded.slice(k,k+g.length); k+=take.length; if(!take.length) return;
+    const ps=rnd(g.filter(p=>p<=n)); take.forEach((nm,i)=>{ pos[ps[i]]=nm; }); });
+  const free=[]; for(let p=1;p<=n;p++) if(!pos[p]) free.push(p);
+  free.forEach((p,i)=>{ pos[p]=rest[i]; });
+  return seedOrder(size).map(p=>p<=n?pos[p]:BYE);
+}
+/* Arma todas las rondas a partir del sorteo y de los resultados cargados: cada partido con sus jugadores, su ganador y su score. */
+function drawRounds(m,tid,cid,sd){
+  const slots=(sd&&sd.slots)||[], names=DRAW_ROUNDS[slots.length]; if(!names) return null;
+  const res=roundsOfM(m,tid,cid), real=x=>x&&x!==BYE; let cur=slots.map(x=>x||"");
+  const rounds=names.map(rn=>{
+    const pool=((res.find(r=>r.name===rn)||{}).m)||[], matches=[], next=[];
+    for(let k=0;k<cur.length;k+=2){
+      const a=cur[k], b=cur[k+1], mt={a,b,win:null,bye:false,score:"",ridx:-1};
+      if(a===BYE||b===BYE){ mt.bye=true; if(real(a)) mt.win=0; else if(real(b)) mt.win=1; }
+      else if(a&&b){ const ka=sideKey(a), kb=sideKey(b);
+        const i=pool.findIndex(x=>{ const k0=sideKey(x[0]), k1=sideKey(x[1]); return (k0===ka&&k1===kb)||(k0===kb&&k1===ka); });
+        if(i>=0){ mt.ridx=i; mt.win=sideKey(pool[i][0])===ka?0:1; mt.score=pool[i][2]||""; } }
+      matches.push(mt);
+      next.push(mt.win===0?a:mt.win===1?b:(a===BYE&&b===BYE?BYE:""));
+    }
+    cur=next; return {name:rn,matches};
+  });
+  return {rounds,champion:real(cur[0])?cur[0]:""};
+}
+/* Partido todavía sin jugar: sin score. win (0/1) marca al que pasa directo cuando el rival es BYE. */
+function pendingSB(a,b,win){
+  const nm=x=>!x?'<span class="tbd">A definir</span>':(x===BYE?'<span class="tbd">BYE</span>':esc(dispSplit(x).ap));
+  const row=(x,w)=>`<div class="sb-row${w?" w":""}"><span class="sb-name" title="${esc(x===BYE?"BYE":(x||""))}">${nm(x)}</span><span class="g pad"></span></div>`;
+  return `<div class="sb c" style="--n:1">${row(a,win===0)}${row(b,win===1)}</div>`;
+}
+function drawBracketHTML(m,t,cid,sd){
+  const dr=drawRounds(m,t.id,cid,sd); if(!dr) return "";
+  const R=dr.rounds.length, size=sd.slots.length;
+  const box=mt=>{
+    if(mt.bye||mt.win==null) return pendingSB(mt.a,mt.b,mt.bye?mt.win:null);
+    const sc=parseScore(mt.score), topWon=mt.win===0;
+    return scoreboard(mt.a,mt.b,Array.isArray(sc)&&!topWon?flip(sc):sc,topWon,true,true);
+  };
+  const cols=dr.rounds.map(rd=>{
+    const boxes=rd.matches.map(box); let slots="";
+    if(boxes.length===1) slots=`<div class="single">${boxes[0]}</div>`;
+    else for(let i=0;i<boxes.length;i+=2) slots+=`<div class="pair">${boxes[i]}${boxes[i+1]}</div>`;
+    return `<div class="bcol"><h3>${esc(rd.name)}</h3><div class="slots">${slots}</div></div>`;
+  }).join("");
+  const ch=dr.champion?dispSplit(dr.champion):null;
+  const style=`grid-template-columns:repeat(${R},minmax(0,1fr)) minmax(96px,.78fr);min-height:${Math.max(300,size/2*78)}px${R>=5?";min-width:820px":""}`;
+  return `<div class="bracket-box scroll-x"><div class="bracket" style="${style}">${cols}
+      <div class="bcol"><h3>Campeón</h3><div class="slots"><div class="single"><div class="champ-card">${icon("trophy")}
+        <small>${esc(t.nombre)}, Cat. ${esc(catName(cid,m))}</small><strong>${ch?esc(ch.ap):"A definir"}</strong><small>${ch?esc(ch.nom):""}</small></div></div></div></div></div></div>`;
+}
+
+/* --- Panel del administrador --- */
+function dmatchHTML(t,c,ri,mi,mt,ins,counts){
+  const real=x=>x&&x!==BYE, tbd=s=>`<div class="dm-static tbd">${s}</div>`;
+  const slot=side=>{
+    const idx=mi*2+side, cur=side?mt.b:mt.a, dup=real(cur)&&counts.get(sideKey(cur))>1;
+    const opts=[["","— sin asignar —"],[BYE,"BYE (pasa directo)"]];
+    ins.forEach(x=>opts.push([x,x+(counts.get(sideKey(x))&&sideKey(x)!==sideKey(cur)?"  ·  ya está en el cuadro":"")]));
+    if(cur&&!opts.some(([v])=>v===cur)) opts.push([cur,cur+"  ·  (no está en inscriptos)"]);
+    return `<label class="f${dup?" dm-dup":""}">Lugar ${idx+1}<select data-bind="${P(`sorteos.${t}.${c}.slots.${idx}`)}" data-rerender>${opts.map(([v,l])=>`<option value="${esc(v)}"${cur===v?" selected":""}>${esc(l)}</option>`).join("")}</select></label>`;
+  };
+  const name=(x,lab)=>`<div class="f">${lab}${!x?tbd("A definir"):(x===BYE?tbd("BYE"):`<div class="dm-static" title="${esc(x)}">${esc(x)}</div>`)}</div>`;
+  let out;
+  if(mt.bye) out=`<div class="f">Resultado${tbd("Pasa directo")}</div><div></div>`;
+  else if(!(real(mt.a)&&real(mt.b))) out=`<div class="f">Resultado${tbd("A definir")}</div><div></div>`;
+  else out=`<label class="f">Ganó<select data-dwin="${ri}.${mi}"><option value="">—</option>
+      <option value="0"${mt.win===0?" selected":""}>${esc(shortName(mt.a))}</option><option value="1"${mt.win===1?" selected":""}>${esc(shortName(mt.b))}</option></select></label>
+    <label class="f">Score<input data-dscore="${ri}.${mi}" value="${esc(mt.score)}" placeholder="6-4 6-2"${mt.win==null?" disabled":""} autocomplete="off"></label>`;
+  return `<div class="dmatch">${ri===0?slot(0)+slot(1):name(mt.a,"Jugador 1")+name(mt.b,"Jugador 2")}${out}</div>`;
+}
+function aSorteo(){
+  const d=DM(), ts=d.torneos; let {t,c}=state.adminRes;
+  if(!ts.find(x=>x.id===t)) t=state.adminRes.t=ts.length?ts[ts.length-1].id:"";
+  const tour=ts.find(x=>x.id===t), cs=tour?tourCats(tour,d):[];
+  if(!cs.find(x=>x.id===c)) c=state.adminRes.c=cs.length?cs[0].id:"";
+  const title=`Inscriptos y sorteo de ${modGenLabel().toLowerCase()}`;
+  if(!t||!c) return `<div class="panel"><h2>${title}</h2><p class="muted">Primero creá al menos un torneo y una categoría.</p></div>`;
+  const dobles=state.mod==="dobles", ins=inscList(d,t,c), n=ins.length, sd=drawOf(d,t,c);
+  const pts=nm=>{ let y=0, all=0; teamParts(nm).forEach(p=>{ const s=seedPoints(d,tour,c,p); y+=s.y; all+=s.all; }); return y||all||"—"; };
+  const size=n>=2?drawSizeFor(n):0, byes=size-n;
+  const hasRes=roundsOfM(d,t,c).some(r=>r.m.length);
+  let drawBlock;
+  const controls=`<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+      <label class="check"><input type="checkbox" id="drawSeed"${state.drawSeed===true?" checked":""}>Cabezas de serie según el ranking (opcional)</label>
+      <button type="button" class="btn" data-act="draw-auto">${sd?"Sortear de nuevo":"Sortear automáticamente"}</button>
+      ${sd?`<button type="button" class="btn danger sm" data-act="draw-clear">Borrar cuadro</button>`:`<button type="button" class="btn ghost" data-act="draw-blank">Armar a mano</button>`}</div>`;
+  if(!sd){
+    drawBlock=`<div class="block"><div class="block-head"><strong>Cuadro</strong></div>
+      <p class="muted" style="margin:0">${n<2?"Cargá al menos 2 inscriptos para poder sortear.":n>32?"El cuadro admite hasta 32 inscriptos.":`${n} inscriptos: cuadro de ${size}${byes?` con ${byes} BYE${byes>1?"s":""}`:""}, arranca en ${DRAW_ROUNDS[size][0]}.`}</p>
+      ${controls}</div>`;
+  } else {
+    const dr=drawRounds(d,t,c,sd), counts=new Map();
+    sd.slots.forEach(x=>{ if(x&&x!==BYE) counts.set(sideKey(x),(counts.get(sideKey(x))||0)+1); });
+    const inDraw=new Set(counts.keys()), inIns=new Set(ins.map(sideKey));
+    const missing=ins.filter(x=>!inDraw.has(sideKey(x))), extra=sd.slots.filter(x=>x&&x!==BYE&&!inIns.has(sideKey(x)));
+    const dups=[...counts.values()].some(v=>v>1);
+    const warn=[missing.length?`Inscriptos que no están en el cuadro: ${esc(missing.join(" · "))}.`:"",
+      extra.length?`Hay lugares con jugadores que no están inscriptos: ${esc(extra.join(" · "))}.`:"",
+      dups?"Hay jugadores repetidos en el cuadro (marcados en rojo).":""].filter(Boolean);
+    drawBlock=`<div class="block"><div class="block-head"><strong>Cuadro de ${sd.slots.length}</strong><span class="muted">Arranca en ${esc(dr.rounds[0].name)}</span></div>
+      ${controls}
+      ${warn.length?`<p class="hint" style="margin:0;color:var(--loss)">${warn.join(" ")} Podés corregirlo abajo o sortear de nuevo.</p>`:""}
+      <p class="hint" style="margin:0">Podés cambiar a mano cualquier lugar de la primera ronda. Los ganadores avanzan solos: cargá el resultado acá o en la pestaña Resultados, con los mismos nombres del cuadro.${hasRes?" Ojo: si cambiás los cruces, los resultados ya cargados que no coincidan dejan de verse en el cuadro.":""}</p></div>
+      ${dr.rounds.map((rd,ri)=>`<div class="block"><div class="block-head"><strong>${esc(rd.name)}</strong><span class="muted">${rd.matches.length} partido${rd.matches.length===1?"":"s"}</span></div>
+        ${rd.matches.map((mt,mi)=>dmatchHTML(t,c,ri,mi,mt,ins,counts)).join("")}</div>`).join("")}`;
+  }
+  return `<div class="panel"><h2>${title}</h2>
+    <p class="hint">1) Cargá los inscriptos de cada categoría. 2) Sorteá el cuadro (automático o a mano). 3) Los ganadores avanzan solos cuando cargás los resultados. El cuadro se ve en la sección Cuadro de cada torneo.</p>
+    <label class="f">Torneo<select id="resT">${ts.map(x=>`<option value="${esc(x.id)}"${x.id===t?" selected":""}>${esc(x.nombre)}${x.anio?` (${esc(x.anio)})`:""}</option>`).join("")}</select></label>
+    <div class="scroll-x"><div class="seg" role="group" aria-label="Categoría">${cs.map(k=>{ const q=inscList(d,t,k.id).length;
+      return `<button type="button" data-sorcat="${esc(k.id)}" aria-pressed="${k.id===c}">Cat. ${esc(k.nombre)}${q?`<span class="cnt">${q}</span>`:""}</button>`; }).join("")}</div></div>
+    <div class="block"><div class="block-head"><strong>Inscriptos · Cat. ${esc(catName(c,d))}</strong><span class="muted">${n}</span></div>
+      <div class="insc-row"><label class="f">${dobles?"Agregar pareja (Perez, Juan / Lopez, Pedro)":"Agregar inscripto (Apellido, Nombre)"}<input id="inscNew" ${dobles?"":'list="dlPlayers" '}autocomplete="off" placeholder="${dobles?"Perez, Juan / Lopez, Pedro":"Apellido, Nombre"}"></label>
+        <button type="button" class="btn" data-act="add-insc">${icon("plus")}Agregar</button>
+        ${dobles?"":`<button type="button" class="btn ghost" data-act="insc-from-rank">Traer los del ranking de la categoría</button>`}</div>
+      <details><summary class="muted" style="cursor:pointer">Pegar varios a la vez</summary>
+        <div style="display:flex;flex-direction:column;gap:8px;margin-top:8px"><label class="f">Uno por línea<textarea id="inscBulk" placeholder="${dobles?"Perez, Juan / Lopez, Pedro\nGomez, Ana / Ruiz, Sol":"Perez, Juan\nGomez, Luis"}"></textarea></label>
+        <div><button type="button" class="btn ghost sm" data-act="add-insc-bulk">Agregar la lista</button></div></div></details>
+      ${n?`<div class="scroll-x"><table class="etable" style="min-width:380px"><thead><tr><th>#</th><th>${dobles?"Pareja":"Inscripto"}</th><th title="Puntos del ranking antes de este torneo (sirven para las cabezas de serie)">Puntos</th><th></th></tr></thead><tbody>
+      ${ins.map((x,i)=>`<tr><td class="muted">${i+1}</td>${C(P(`inscritos.${t}.${c}.${i}`),x,'style="min-width:230px"')}<td class="muted">${pts(x)}</td><td>${IB("del-insc",i,"trash","Quitar inscripto")}</td></tr>`).join("")}
+      </tbody></table></div>`:`<p class="muted" style="margin:0">Todavía no hay inscriptos en esta categoría.</p>`}</div>
+    ${drawBlock}</div>`;
+}
+/* Ganador y score de un partido cargados desde el sorteo: se guardan en Resultados, así el resto del sitio los ve igual que siempre. */
+function drawSetResult(el){
+  const m=DM(), {t,c}=state.adminRes, sd=drawOf(m,t,c); if(!sd) return;
+  const isWin=el.dataset.dwin!=null, [ri,mi]=String(isWin?el.dataset.dwin:el.dataset.dscore).split(".").map(Number);
+  const dr=drawRounds(m,t,c,sd), mt=dr&&dr.rounds[ri]&&dr.rounds[ri].matches[mi];
+  if(!mt||!mt.a||!mt.b||mt.a===BYE||mt.b===BYE) return;
+  const rounds=resRounds(m,t,c), rd=rounds.find(r=>r.name===dr.rounds[ri].name), ix=mt.ridx;
+  const prev=mt.win==null?null:(mt.win===0?mt.a:mt.b);
+  if(isWin){
+    const v=el.value;
+    if(v===""){ if(ix>=0) rd.m.splice(ix,1); }
+    else { const w=v==="0"?mt.a:mt.b, l=v==="0"?mt.b:mt.a;
+      if(ix>=0){ const e=rd.m[ix], mismo=sideKey(e[0])===sideKey(w); e[0]=w; e[1]=l;
+        if(!mismo){ const sc=parseScore(e[2]); if(Array.isArray(sc)){ const f=flip(sc); e[2]=f.map(x=>x.join("-")).join(" ")+(f.ret?(f.length?" ret":"ret"):""); } } }
+      else rd.m.push([w,l,""]); }
+    const nw=v===""?null:(v==="0"?mt.a:mt.b);
+    if(prev&&(!nw||sideKey(nw)!==sideKey(prev))){ // cambió el ganador: lo que jugó después ya no vale
+      const gone=new Set([sideKey(prev)]); let removed=0;
+      for(let r=ri+1;r<dr.rounds.length;r++){ const nx=rounds.find(x=>x.name===dr.rounds[r].name); if(!nx) continue;
+        nx.m=nx.m.filter(e=>{ const k0=sideKey(e[0]), k1=sideKey(e[1]); if(gone.has(k0)||gone.has(k1)){ gone.add(k0); removed++; return false; } return true; }); }
+      if(removed) toast(`Se borraron ${removed} resultado${removed===1?"":"s"} de rondas siguientes que dependían de ese ganador`);
+    }
+  } else if(ix>=0) rd.m[ix][2]=el.value.trim();
+  const dr2=drawRounds(m,t,c,sd); // deja los partidos de Resultados en el orden del cuadro
+  if(dr2) dr2.rounds.forEach(x=>{ const r=rounds.find(q=>q.name===x.name); if(!r) return;
+    const at=e=>{ const k0=sideKey(e[0]), k1=sideKey(e[1]); const i=x.matches.findIndex(q=>q.a&&q.b&&((sideKey(q.a)===k0&&sideKey(q.b)===k1)||(sideKey(q.a)===k1&&sideKey(q.b)===k0))); return i<0?1e6:i; };
+    r.m=r.m.map((e,i)=>({e,k:at(e),i})).sort((p,q)=>p.k-q.k||p.i-q.i).map(p=>p.e); });
+}
+
 /* ================= Modo pantalla del club ================= */
 const SCR = {i:0,t:0,secs:15,paused:false,timer:null,wake:null};
 const norm = s => String(s||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase();
@@ -3144,6 +3392,9 @@ function screenAction(a){
     else prompt("Copiá este link:",url); }
   else if(a==="exit"){ if(document.fullscreenElement) document.exitFullscreen(); location.hash=""; }
 }
+document.addEventListener("keydown",e=>{ // Enter en el campo de inscriptos = Agregar
+  if(e.key==="Enter"&&e.target&&e.target.id==="inscNew"){ e.preventDefault(); const b=document.querySelector('[data-act="add-insc"]'); if(b) b.click(); }
+});
 document.addEventListener("keydown",e=>{
   if(location.hash.replace(/^#/,"").split("/")[0]!=="pantalla") return;
   if(e.target.closest&&e.target.closest("input,textarea,select")) return;
@@ -3203,7 +3454,7 @@ function setGenero(v){
   toast(`Mostrando ${modGenLabel().toLowerCase()}`);
 }
 document.addEventListener("click",e=>{
-  const el=e.target.closest("[data-surface],[data-mod],[data-genero],[data-cat],[data-round],[data-photo],[data-sched],[data-player],[data-act],[data-atab],[data-acat],[data-admintab],[data-ttoggle],[data-ayear],[data-atour],[data-share],[data-inscribir],[data-resview],[data-resround],[data-resnav],[data-scr]");
+  const el=e.target.closest("[data-surface],[data-mod],[data-genero],[data-cat],[data-round],[data-photo],[data-sched],[data-player],[data-act],[data-atab],[data-acat],[data-admintab],[data-ttoggle],[data-ayear],[data-atour],[data-share],[data-inscribir],[data-resview],[data-resround],[data-resnav],[data-scr],[data-sorcat]");
   if(!el) return;
   const ds=el.dataset;
   if(ds.surface){ setSurface(ds.surface); return; }
@@ -3211,6 +3462,7 @@ document.addEventListener("click",e=>{
   if(ds.genero){ if(ds.genero!==state.genero) setGenero(ds.genero); return; }
   if(ds.share){ shareAction(ds.share,ds.t,ds.c); return; }
   if(ds.inscribir){ openInscribir(ds.inscribir); return; }
+  if(ds.sorcat){ syncDraft(); state.adminRes={t:state.adminRes.t,c:ds.sorcat}; render(); return; }
   if(ds.resview){ syncDraft(); state.resView=ds.resview; store.set("resview",ds.resview); render(); return; }
   if(ds.resround!=null){ syncDraft(); state.resRound=+ds.resround; state.resIdx=null; render(); return; }
   if(ds.resnav){ syncDraft(); state.resIdx=(state.resIdx||0)+(+ds.resnav); render(); return; }
@@ -3262,6 +3514,7 @@ document.addEventListener("change",async e=>{
   const el=e.target, id=el.id;
   if(el.hasAttribute("data-yearsel")){ if(state.draft) syncDraft(); state.anio=el.value; store.set("anio",el.value); state.closedTours=null; state.round=0; render(); return; }
   if(el.hasAttribute("data-rerender")){ syncDraft(); render(); return; }
+  if(el.dataset&&(el.dataset.dwin!=null||el.dataset.dscore!=null)){ syncDraft(); drawSetResult(el); render(); return; }
   if(id==="resT"){ syncDraft(); state.adminRes={t:el.value,c:""}; state.resRound=null; state.resIdx=null; render(); return; }
   if(id==="resC"){ syncDraft(); state.adminRes={t:document.getElementById("resT").value,c:el.value}; state.resRound=null; state.resIdx=null; render(); return; }
   if(id==="upInfoFoto"&&el.files[0]){ syncDraft(); try{ state.draft.info.foto=await downscale(el.files[0],1600); state.draft.info.modo="foto"; toast("Foto lista. Tocá Guardar para publicarla."); }catch(err){ toast("No se pudo leer la imagen"); } render(); return; }
