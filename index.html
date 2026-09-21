@@ -377,6 +377,13 @@ svg.tchev{width:20px;height:20px;flex-shrink:0;transition:transform .18s;color:v
 .pc-main{padding:24px;display:flex;flex-direction:column;gap:6px}
 .pc-main h1{font-size:clamp(2.6rem,7vw,4.2rem)}
 .pc-main .sub{color:var(--muted);font-weight:600;font-size:1.1rem}
+.pc-id{display:flex;align-items:center;gap:16px}
+.pc-id-text{display:flex;flex-direction:column;gap:2px;min-width:0}
+.pc-photo{width:84px;height:84px;border-radius:50%;flex:none;background-size:cover;background-position:center top;
+  box-shadow:0 0 0 3px var(--surface),0 0 0 5px var(--line-strong)}
+.pc-photo-ph{display:grid;place-items:center;color:#fff;font-weight:850;font-stretch:70%;font-size:1.7rem}
+.pc-photo-edit{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+@media (max-width:640px){.pc-photo{width:64px;height:64px;font-size:1.3rem}}
 .pc-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:auto;padding-top:16px}
 .pc-rank{position:relative;background:var(--court-in);color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;
   min-height:190px;text-shadow:0 2px 0 rgba(0,0,0,.25),0 0 14px rgba(0,0,0,.4);transition:background-color .45s}
@@ -483,26 +490,36 @@ dialog.lb::backdrop{background:rgba(5,10,8,.88)}
 @media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}
 
 /* ================= Portón de clubes (login) ================= */
-#gateRoot{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 20px;text-align:center}
-.gate-wrap{width:100%;max-width:560px}
-.gate-mark{width:52px;height:34px;border-radius:4px;background:var(--court-in);position:relative;box-shadow:inset 0 0 0 3px var(--chalk);margin:0 auto 18px}
-.gate-mark::after{content:"";position:absolute;left:50%;top:-4px;bottom:-4px;width:3px;background:var(--net)}
+#gateRoot{min-height:100vh;position:relative;overflow:hidden;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 20px;text-align:center}
+.gate-bg{position:absolute;inset:0;z-index:0;pointer-events:none}
+.gate-lines{position:absolute;inset:0;width:100%;height:100%;color:var(--line-strong);opacity:.55}
+.gate-wrap{position:relative;z-index:1;width:100%;max-width:560px;animation:gateIn .6s cubic-bezier(.2,.8,.2,1) both}
+@keyframes gateIn{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion: reduce){.gate-wrap{animation:none}}
+.gate-mark{width:88px;height:88px;margin:0 auto 18px;position:relative;border-radius:22px;overflow:hidden;box-shadow:0 12px 28px rgba(0,0,0,.35)}
+.gate-mark img{width:100%;height:100%;display:block}
+.gate-mark::before{content:"";position:absolute;inset:-50px;z-index:-1;border-radius:50%;
+  background:radial-gradient(circle,color-mix(in srgb,var(--accent) 42%,transparent),transparent 72%);filter:blur(2px)}
 .gate-wrap h1{font-size:clamp(2rem,6vw,2.7rem);margin:0 0 6px}
 .gate-wrap>p.lede2{color:var(--muted);margin:0 0 30px;font-size:1.02rem}
 .clubs-grid{display:flex;flex-wrap:wrap;justify-content:center;gap:14px;margin-bottom:8px}
-.clubs-grid .club-btn{width:150px}
-.club-btn{display:flex;flex-direction:column;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px 10px;cursor:pointer;color:var(--text)}
-.club-btn:hover{border-color:var(--accent)}
+.clubs-grid .club-btn{width:160px}
+.club-btn{display:flex;flex-direction:column;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px 10px;cursor:pointer;color:var(--text);
+  transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease}
+.club-btn:hover{border-color:var(--accent);transform:translateY(-3px);box-shadow:0 10px 22px rgba(0,0,0,.22)}
 .club-btn.sel{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent)}
 .club-shield{width:56px;height:56px;border-radius:50%;overflow:hidden;display:grid;place-items:center;font-weight:850;font-stretch:70%;font-size:1.3rem;color:#fff;flex:none}
 .club-shield img{width:100%;height:100%;object-fit:cover;display:block}
 .club-shield.has-img{display:block;border-radius:12px;overflow:hidden;background:#fff;padding:6px;box-sizing:border-box}
 .club-shield.has-img img{width:100%;height:100%;object-fit:contain;display:block}
-.club-btn .club-shield{width:104px;height:104px;font-size:2.2rem}
+.club-btn .club-shield{width:120px;height:120px;font-size:2.4rem}
 .club-btn{padding:14px 12px}
 .club-btn span{font-weight:700;font-size:.88rem;line-height:1.2;word-break:break-word}
 .gate-empty{color:var(--muted);padding:26px 10px}
-.gate-pass{max-width:280px;margin:22px auto 0;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:22px;display:flex;flex-direction:column;gap:12px;align-items:center}
+.gate-pass{max-width:280px;margin:22px auto 0;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:22px;display:flex;flex-direction:column;gap:12px;align-items:center;
+  animation:gpIn .28s ease both}
+@keyframes gpIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion: reduce){.gate-pass{animation:none}}
 .gate-pass .club-shield{width:96px;height:96px;font-size:2rem}
 .gate-pass strong{font-size:1.15rem}
 .gate-pass input{width:100%;text-align:center;letter-spacing:.35em;font-size:1.3rem;font-weight:800;border:1px solid var(--line-strong);background:var(--bg);color:var(--text);border-radius:8px;padding:10px;font-variant-numeric:tabular-nums}
@@ -511,8 +528,11 @@ dialog.lb::backdrop{background:rgba(5,10,8,.88)}
 .gate-pass .btnrow .btn{flex:1}
 .gate-player{margin-top:26px;display:flex;flex-direction:column;align-items:center;gap:8px}
 .gate-player .btn{min-width:180px;padding:11px 22px}
+.gate-player .btn.ghost{box-shadow:none;background:none;color:var(--muted);min-width:0;padding:6px 4px;text-decoration:underline;text-underline-offset:3px}
+.gate-player .btn.ghost:hover{color:var(--text);background:none}
 .gate-player p{margin:0;font-size:.82rem;color:var(--muted);max-width:320px}
-.gate-admin-link{display:inline-block;margin-top:34px;font-size:.78rem;color:var(--muted);text-decoration:underline;text-underline-offset:3px;background:none;border:0;cursor:pointer;font-weight:600}
+.gate-controls{display:flex;align-items:center;justify-content:center;gap:10px;margin-top:28px}
+.gate-admin-link{display:inline-block;margin-top:14px;font-size:.78rem;color:var(--muted);text-decoration:underline;text-underline-offset:3px;background:none;border:0;cursor:pointer;font-weight:600}
 .gate-admin-link:hover{color:var(--text)}
 .clubadmin-list{display:flex;flex-direction:column;gap:10px}
 .clubadmin-row{display:grid;grid-template-columns:auto 1fr auto auto;gap:10px;align-items:center;background:var(--surface-2);border:1px solid var(--line);border-radius:10px;padding:8px 10px}
@@ -650,9 +670,21 @@ html[data-screen="1"] .credit{display:none}
 </svg>
 
 <div id="gateRoot">
+  <div class="gate-bg" aria-hidden="true">
+    <svg class="gate-lines" viewBox="0 0 800 800" preserveAspectRatio="xMidYMid slice">
+      <g fill="none" stroke="currentColor" stroke-width="2">
+        <rect x="80" y="70" width="640" height="660"/>
+        <rect x="80" y="70" width="70" height="660"/>
+        <rect x="650" y="70" width="70" height="660"/>
+        <line x1="400" y1="70" x2="400" y2="730"/>
+        <rect x="150" y="250" width="500" height="300"/>
+        <line x1="150" y1="400" x2="650" y2="400"/>
+      </g>
+    </svg>
+  </div>
   <div class="gate-wrap">
-    <div class="gate-mark" aria-hidden="true"></div>
-    <h1>Torneos Tenis</h1>
+    <div class="gate-mark" aria-hidden="true"><img src="icon-512.png" alt=""></div>
+    <h1 class="display">Torneos Tenis</h1>
     <p class="lede2" id="gateLede">Administradores: elegí tu club para entrar</p>
     <div class="clubs-grid" id="clubsGrid"></div>
     <div class="gate-empty" id="clubsEmpty" style="display:none">Todavía no hay clubes cargados.</div>
@@ -660,6 +692,10 @@ html[data-screen="1"] .credit{display:none}
     <div class="gate-player">
       <button class="btn" id="playerEnterBtn">Soy jugador</button>
       <p id="gatePlayerHint"></p>
+    </div>
+    <div class="gate-controls" role="group" aria-label="Preferencias">
+      <div class="swatches" id="gateSwatches" role="group" aria-label="Superficie"></div>
+      <button class="theme-btn" id="gateThemeBtn" aria-label="Cambiar entre modo claro y oscuro"><svg class="i" viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></svg></button>
     </div>
     <button class="gate-admin-link" id="clubAdminLink">Administrador de perfiles</button>
     <div class="sync-state" id="syncStateGate"><span class="sd"></span><span class="st">Sin sincronizacion</span></div>
@@ -718,6 +754,17 @@ html[data-screen="1"] .credit{display:none}
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 
 <script>
+/* Sincroniza superficie y tema ni bien arranca, antes de dibujar el portón (que se dibuja
+   antes de que existan "store" y "state"), para que los selectores del portón ya muestren
+   la elección guardada y no un valor por defecto. */
+(function(){
+  try{ const s=localStorage.getItem("liga:surface"); if(s) document.documentElement.dataset.surface=s; }catch(e){}
+  try{
+    const t=localStorage.getItem("liga:theme");
+    document.documentElement.dataset.mode = (t?t==="dark":matchMedia("(prefers-color-scheme: dark)").matches)?"dark":"light";
+  }catch(e){}
+})();
+
 /* =====================================================================
    DATOS POR DEFECTO (todo esto se puede editar desde "Ingreso administrador")
    ===================================================================== */
@@ -989,7 +1036,7 @@ function tryDeepLink(){
 }
 
 let gateSel = null; // id del club elegido en el portón, a la espera de la clave
-let gateMode = "admin"; // "admin" (entra con la clave del club) | "player" (elige un club y entra sin clave, solo lectura)
+let gateMode = "player"; // "player" (elige un club y entra sin clave, solo lectura, es el camino principal) | "admin" (entra con la clave del club)
 
 function renderGate(){
   const clubes = clubStore.get();
@@ -1301,6 +1348,11 @@ function renderRescue(){
 }
 
 renderGate();
+/* Los selectores de superficie del portón: no dependen de "state" ni de "store" (todavía no
+   existen acá), leen directo del <html> que ya se sincronizó arriba. El click se maneja con el
+   mismo listener delegado que usan los del header, así que no hace falta nada más para que funcionen. */
+document.getElementById("gateSwatches").innerHTML=[["polvo","Polvo de ladrillo"],["cesped","Césped"],["dura","Cancha dura"]].map(([v,l])=>
+  `<button class="swatch sw-${v}" data-surface="${v}" aria-pressed="${document.documentElement.dataset.surface===v}" aria-label="${l}" title="${l}"></button>`).join("");
 
 const ROUNDS = ["16avos","Octavos","Cuartos","Semifinal","Final"];
 const PTS = {100:"Campeón",80:"Final",60:"Semifinal",40:"Cuartos",20:"Octavos",10:"16avos",5:"Ronda previa"};
@@ -1325,6 +1377,7 @@ const DEFAULT_DATA = {
   },
   novedades:[],
   fotos:[],
+  jugadores:{}, // foto de cada jugador: { "Apellido, Nombre": {foto:"data:..."} }, es independiente de singles/dobles
   modalidades:{
     "singles-hombres":emptyModalidad(),
     "singles-damas":emptyModalidad(),
@@ -1403,6 +1456,7 @@ function migrate(o){ // convierte datos de versiones anteriores al esquema actua
   return d;
 }
 function normalize(d){ // asegura que cada torneo tenga año (lo toma del nombre o las fechas si falta)
+  d.jugadores = (d.jugadores&&typeof d.jugadores==="object") ? d.jugadores : {};
   { const c=(d.club&&typeof d.club==="object")?d.club:{}, r=(c.redes&&typeof c.redes==="object")?c.redes:{};
     d.club={ direccion:String(c.direccion||"").trim(), mapa:String(c.mapa||"").trim(),
       redes:Object.fromEntries(Object.keys(DEFAULT_DATA.club.redes).map(k=>[k,String(r[k]||"").trim()])) }; }
@@ -1533,6 +1587,7 @@ function findPlayer(name){
   for(const c of cats()){ const r=ranked(c.id,M(),true).find(x=>x.name===name); if(r) return {cat:c.id,...r,otherYear:true}; }
   return null;
 }
+function playerFoto(name){ return (data.jugadores&&data.jugadores[name]&&data.jugadores[name].foto)||""; }
 function roundsOf(tid,cat){ const r=M().resultados[tid]; return (r&&r[cat])||[]; }
 function playerMatches(name){
   const out=[];
@@ -1938,8 +1993,18 @@ function vPartidos(){
   const mlist = ms.length ? `<h2 class="round-label">Partidos</h2><div class="mlist">${ms.slice().reverse().map(m=>`<div><div class="mmeta"><span>${esc(m.torneo)}, ${esc(m.round)}${m.partner?`, con ${esc(m.partner)}`:""}</span>
       <span class="${m.won?"res-w":"res-l"}">${m.won?"Ganó":"Perdió"}</span></div>${scoreboard(m.mine,m.opp,m.sets,m.won)}</div>`).join("")}</div>`
     : `<p class="note">El detalle partido a partido aparece cuando la organización carga los resultados.</p>`;
+  const foto = playerFoto(p.name);
+  const avatarHTML = foto
+    ? `<span class="pc-photo" style="background-image:url('${esc(foto)}')"></span>`
+    : `<span class="pc-photo pc-photo-ph" style="background:${clubColor(p.name)}">${initials(s.ap)}</span>`;
+  const fotoAdmin = state.admin ? `<div class="pc-photo-edit">
+      <label class="btn ghost sm filebtn">${foto?"Cambiar foto":"Subir foto"}<input type="file" accept="image/*" id="upJugadorFoto"></label>
+      ${foto?`<button class="btn ghost sm" data-act="rm-foto-jugador">Quitar foto</button>`:""}
+    </div>` : "";
   return `<section class="wrap page"><div class="page-tools">${yearSel()}</div>
-    <div class="pcard"><div class="pc-main"><h1 class="display">${esc(s.ap)}</h1><span class="sub">${esc(s.nom)}${s.nom?", ":""}Categoría ${esc(catName(p.cat))}${modNote()}${isProfile?' <span class="me-tag">Tu perfil</span>':""}</span>
+    <div class="pcard"><div class="pc-main"><div class="pc-id">${avatarHTML}<div class="pc-id-text">
+        <h1 class="display">${esc(s.ap)}</h1><span class="sub">${esc(s.nom)}${s.nom?", ":""}Categoría ${esc(catName(p.cat))}${modNote()}${isProfile?' <span class="me-tag">Tu perfil</span>':""}</span>
+      </div></div>${fotoAdmin}
       <div class="pc-actions">${isProfile?`<button class="btn ghost sm" data-act="unprofile">Dejar de usar como mi perfil</button>`
         :`<button class="btn sm" data-act="profile">Guardar como mi perfil</button>`}<button class="btn ghost sm" data-act="pick">Elegir ${otroJugador()}</button></div></div>
       <div class="pc-rank"><b>${p.pos}</b><span>de ${ranked(p.cat).length} en Cat. ${esc(catName(p.cat))}, ${p.total} puntos</span></div></div>
@@ -2684,6 +2749,10 @@ document.addEventListener("click",e=>{
     if(act==="profile"){ const n=state.view||state.profile; state.profile=n; store.set("perfil:"+genKey(),n); toast("Guardado como tu perfil"); render(); return; }
     if(act==="unprofile"){ state.view=state.profile; state.profile=""; store.set("perfil:"+genKey(),""); toast("Ya no es tu perfil"); render(); return; }
     if(act==="pick"){ state.picking=true; state.view=""; render(); return; }
+    if(act==="rm-foto-jugador"&&state.admin){ const name=state.picking?"":(state.view||state.profile);
+      if(name&&data.jugadores&&data.jugadores[name]){ delete data.jugadores[name].foto;
+        if(saveData()){ if(state.draft) state.draft=clone(data); toast("Foto quitada"); } }
+      render(); return; }
     if(act==="logout"||act==="exit-club"){ exitToGate(); return; }
     if(state.admin&&state.draft) adminAction(act,el);
   }
@@ -2713,6 +2782,16 @@ document.addEventListener("change",async e=>{
   if(id==="resT"){ syncDraft(); state.adminRes={t:el.value,c:""}; state.resRound=null; state.resIdx=null; render(); return; }
   if(id==="resC"){ syncDraft(); state.adminRes={t:document.getElementById("resT").value,c:el.value}; state.resRound=null; state.resIdx=null; render(); return; }
   if(id==="upInfoFoto"&&el.files[0]){ syncDraft(); try{ state.draft.info.foto=await downscale(el.files[0],1600); state.draft.info.modo="foto"; toast("Foto lista. Tocá Guardar para publicarla."); }catch(err){ toast("No se pudo leer la imagen"); } render(); return; }
+  if(id==="upJugadorFoto"&&el.files[0]&&state.admin){
+    const name=state.picking?"":(state.view||state.profile); if(!name) return;
+    try{
+      const foto=await downscaleEscudo(el.files[0],320);
+      if(!data.jugadores) data.jugadores={};
+      data.jugadores[name]={...(data.jugadores[name]||{}),foto};
+      if(saveData()){ if(state.draft) state.draft=clone(data); toast("Foto actualizada"); } else toast("No se pudo guardar la foto");
+    }catch(err){ toast("No se pudo leer la imagen"); }
+    render(); return;
+  }
   if(id==="upFotos"&&el.files.length){ syncDraft(); let ok=0;
     for(const f of el.files){ try{ state.draft.fotos.push({src:await downscale(f),texto:"",anio:(yearsOf(DM())[0]||String(new Date().getFullYear()))}); ok++; }catch(err){} }
     toast(`${ok} foto${ok===1?"":"s"} lista${ok===1?"":"s"}. Tocá Guardar para publicarlas.`); render(); return; }
@@ -2765,7 +2844,9 @@ sv.addEventListener("click",e=>{ if(e.target===sv) sv.close(); });
 const mq=matchMedia("(prefers-color-scheme: dark)");
 function applyMode(){ const t=store.get("theme",null); document.documentElement.dataset.mode=(t?t==="dark":mq.matches)?"dark":"light"; }
 mq.addEventListener&&mq.addEventListener("change",applyMode);
-document.getElementById("themeBtn").onclick=()=>{ const next=document.documentElement.dataset.mode==="dark"?"light":"dark"; store.set("theme",next); applyMode(); };
+function toggleTheme(){ const next=document.documentElement.dataset.mode==="dark"?"light":"dark"; store.set("theme",next); applyMode(); }
+document.getElementById("themeBtn").onclick=toggleTheme;
+document.getElementById("gateThemeBtn").onclick=toggleTheme;
 
 /* Color de la barra del celular = fondo del tema que esté usando la persona */
 (function(){
