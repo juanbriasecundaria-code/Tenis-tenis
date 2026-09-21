@@ -280,7 +280,9 @@ table.rank{width:100%;border-collapse:collapse}
 .rank tr:last-child td{border-bottom:0}
 .rank td.player{text-align:left}
 .ap{font-weight:750}.nom{color:var(--muted)}
-.pclub{color:var(--muted);font-size:.78rem;font-weight:600;opacity:.85}
+.pclub{color:var(--muted);font-size:.78rem;font-weight:600;opacity:.9;display:inline-flex;align-items:center;gap:4px;vertical-align:middle}
+.pclub-logo{width:15px;height:15px;border-radius:50%;object-fit:cover;flex:none}
+.pclub-logo-ph{display:grid;place-items:center;color:#fff;font-weight:800;font-stretch:70%;font-size:.55rem}
 .pc-club-edit{max-width:280px;margin-top:14px}
 .rank .star{color:var(--gold);margin-left:4px;font-size:.85rem}
 .rank .total{font-stretch:75%;font-weight:900;font-size:1.35rem;font-variant-numeric:tabular-nums;text-align:right;padding-right:18px}
@@ -297,7 +299,7 @@ table.rank{width:100%;border-collapse:collapse}
   .long{display:none}.short{display:inline}
   .rank th,.rank td{padding-left:3px;padding-right:3px}
   .rank .nom{display:block;font-size:.82rem;line-height:1.2}
-  .rank .pclub{display:block;font-size:.76rem;line-height:1.2}
+  .rank .pclub{margin-top:2px;font-size:.76rem;line-height:1.2}
   .pill{min-width:2.1rem;height:1.6rem;font-size:.82rem}
   .rank .total{padding-right:12px;font-size:1.2rem}
   .search input{width:120px}
@@ -368,7 +370,7 @@ svg.tchev{width:20px;height:20px;flex-shrink:0;transition:transform .18s;color:v
 .pchip{border:1px solid var(--line);background:var(--surface);border-radius:99px;padding:7px 14px;cursor:pointer;font-weight:600}
 .pchip:hover{border-color:var(--accent)}
 .pchip .nom{font-weight:500}
-.pchip .pclub{display:block;font-weight:500}
+.pchip .pclub{font-weight:500;margin-left:2px}
 .pcard{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);background:var(--surface);border:1px solid var(--line);border-radius:14px;overflow:hidden}
 .pc-main{padding:24px;display:flex;flex-direction:column;gap:6px}
 .pc-main h1{font-size:clamp(2.6rem,7vw,4.2rem)}
@@ -1008,10 +1010,10 @@ const icon = (n,cls="") => `<svg class="i ${cls}" viewBox="0 0 24 24" aria-hidde
 const CLUB_COLORS = ["#D0652F","#3C86DB","#8457C2","#1F8A55","#B8522A","#2D66A3","#C98452","#6C43A6"];
 function clubColor(id){ let h=0; for(const c of String(id)) h=(h*31+c.charCodeAt(0))>>>0; return CLUB_COLORS[h%CLUB_COLORS.length]; }
 function initials(nombre){ return String(nombre||"?").trim().split(/\s+/).slice(0,2).map(w=>w[0]||"").join("").toUpperCase()||"?"; }
-function shieldHTML(c){ if(c.circuito) return collageHTML(c); return c.escudo ? `<img src="${esc(c.escudo)}" alt="">` : initials(c.nombre); }
-function shieldAttrs(c){ if(c.circuito) return `class="club-shield cshield-wrap"`; return c.escudo ? `class="club-shield has-img"` : `class="club-shield" style="background:${clubColor(c.id)}"`; }
-/* Escudo del "Circuito Abierto": no se sube, se arma solo combinando los logos de los demás
-   clubes (hasta 4), asi se actualiza solo cuando se agregan, editan o borran clubes. */
+function shieldHTML(c){ if(c.circuito) return c.escudo ? `<img src="${esc(c.escudo)}" alt="">` : collageHTML(c); return c.escudo ? `<img src="${esc(c.escudo)}" alt="">` : initials(c.nombre); }
+function shieldAttrs(c){ if(c.circuito) return c.escudo ? `class="club-shield has-img"` : `class="club-shield cshield-wrap"`; return c.escudo ? `class="club-shield has-img"` : `class="club-shield" style="background:${clubColor(c.id)}"`; }
+/* Escudo del "Circuito Abierto": si nadie subió uno propio, se arma solo combinando los logos
+   de los demás clubes (hasta 4), así se actualiza solo cuando se agregan, editan o borran clubes. */
 function collageHTML(c){
   const otros = clubStore.get().filter(x=>x.id!==c.id && !x.circuito).slice(0,4);
   if(!otros.length) return `<span class="cshield-collage n1"><span class="cc-cell" style="background:${clubColor(c.id)};color:#fff">CA</span></span>`;
@@ -1136,6 +1138,7 @@ function bootApp(id, rol){
   window.scrollTo(0,0);
   cloudWatchData(id);
   cloudSyncClub(id);
+  if(isCircuitoClub()) buildCircuitoIndex();
 }
 function exitToGate(){
   cloudUnwatchData();
@@ -1254,7 +1257,7 @@ function renderClubAdmin(){
       <div class="f"><label>Nombre</label><input id="cfNombre" placeholder="Nombre del club"></div>
       <div class="f"><label>Clave numérica</label><input id="cfClave" inputmode="numeric" pattern="[0-9]*" placeholder="Ej: 1234"></div>
       <div class="f"><label style="display:flex;align-items:center;gap:8px;font-weight:600"><input type="checkbox" id="cfCircuito" style="width:auto"> Es el "Circuito Abierto" (torneo entre clubes)</label>
-        <p class="hint" style="margin:4px 0 0">Un torneo aparte, con su propio ranking y cuadro, donde se anotan jugadores de cualquier club. Su escudo se arma solo combinando los logos de los demás clubes.</p>
+        <p class="hint" style="margin:4px 0 0">Un torneo aparte, con su propio ranking y cuadro, donde se anotan jugadores de cualquier club. Si no le subís un escudo propio, se arma solo combinando los logos de los demás clubes.</p>
       </div>
       <div class="f" id="cfEscudoWrap"><label>Escudo (imagen, opcional)</label>
         <div class="filebtn btn ghost sm" style="display:inline-flex">Elegir imagen<input type="file" accept="image/*" id="cfEscudo"></div>
@@ -1285,9 +1288,7 @@ function renderClubAdmin(){
       if(clubAdminDraftEscudo){ const pv=document.getElementById("cfPreview"); pv.src=clubAdminDraftEscudo; pv.style.display="block"; }
     }
   }
-  const syncCircuitoUI=()=>{ document.getElementById("cfEscudoWrap").style.display = document.getElementById("cfCircuito").checked ? "none" : ""; };
-  document.getElementById("cfCircuito").onchange = syncCircuitoUI;
-  syncCircuitoUI();
+  document.getElementById("cfCircuito").onchange = null;
   document.getElementById("cfEscudo").onchange = async e=>{
     const f=e.target.files[0]; if(!f) return;
     try{ const url=await downscaleEscudo(f); clubAdminDraftEscudo=url;
@@ -1324,7 +1325,7 @@ function renderClubAdmin(){
     if(circuito && clubes2.some(x=>x.circuito && x.id!==clubAdminEditing)){
       toast("Ya existe un Circuito Abierto: editalo o eliminalo antes de crear otro"); return;
     }
-    const escudo = circuito ? "" : clubAdminDraftEscudo;
+    const escudo = clubAdminDraftEscudo;
     if(clubAdminEditing){
       clubes2 = clubes2.map(c=>c.id===clubAdminEditing?{...c,nombre,clave,escudo,circuito}:c);
     } else {
@@ -1906,8 +1907,9 @@ function loadClubState(){
 /* ================= Utilidades ================= */
 const nl2br = s => esc(s).replace(/\n/g,"<br>");
 const split = full => { const i=String(full).indexOf(", "); return i<0?{ap:String(full),nom:""}:{ap:full.slice(0,i),nom:full.slice(i+2)}; };
-const nameHTML = full => { const s=split(full); const cl=isCircuitoClub()?playerClub(full):"";
-  return `<span class="ap">${esc(s.ap)}</span>${s.nom?` <span class="nom">${esc(s.nom)}</span>`:""}${cl?` <span class="pclub">${esc(cl)}</span>`:""}`; };
+const nameHTML = full => { const s=split(full); const info=isCircuitoClub()?playerClubInfo(full):null;
+  const clubTag = info ? `<span class="pclub">${miniShieldHTML(info)}<span class="pclub-name">${esc(info.nombre)}</span></span>` : "";
+  return `<span class="ap">${esc(s.ap)}</span>${s.nom?` <span class="nom">${esc(s.nom)}</span>`:""}${clubTag}`; };
 const pill = p => p==null||p==="" ? `<span class="pill p0">—</span>` : `<span class="pill p${p}" title="${PTS[p]||""}">${p}</span>`;
 const joinY = arr => arr.length<2?arr.join(""):arr.slice(0,-1).join(", ")+" y "+arr[arr.length-1];
 function parseScore(str){
@@ -1976,13 +1978,70 @@ function findPlayer(name){
   return null;
 }
 function playerFoto(name){ return (data.jugadores&&data.jugadores[name]&&data.jugadores[name].foto)||""; }
-function playerClub(name){ return (data.jugadores&&data.jugadores[name]&&data.jugadores[name].club)||""; }
-/* El Circuito Abierto junta jugadores de varios clubes: ahí conviene mostrar el club de cada uno
-   junto al nombre, y dejar que cada jugador (no solo el admin) suba su propia foto de perfil. */
+/* El Circuito Abierto junta jugadores de varios clubes. Para mostrar el club (y su escudo) de cada
+   uno junto al nombre SIN que nadie lo tenga que cargar a mano, se arma un índice automático:
+   se bajan una vez los datos (torneos/ranking) de los demás clubes y se busca en qué club aparece
+   anotado cada jugador por su nombre. Si en algún caso hiciera falta corregirlo a mano, el campo
+   "Club" de la ficha del jugador sigue existiendo y tiene prioridad sobre lo detectado solo. */
+let circuitoIdx = {}, circuitoIdxReady = false, circuitoIdxBuilding = false;
+function loadClubData5(id){ try{ return JSON.parse(localStorage.getItem(ck(id,"data5"))||"null"); }catch(e){ return null; } }
+/* Baja los datos de OTRO club en silencio (sin tocar el indicador de sincronización del club
+   actual), solo para poder armar el índice de jugadores. */
+async function fetchClubDataSilent(id){
+  if(!cloudOn() || !id) return false;
+  try{
+    const snap = await fdb.collection("clubes").doc(id).get();
+    const meta = snap.exists ? snap.data() : null;
+    if(!meta || !meta.parts) return false;
+    const col = fdb.collection("clubes").doc(id).collection("data");
+    const docs = await Promise.all(Array.from({length:meta.parts},(_,i)=>col.doc("p"+i).get()));
+    const json = docs.map(d=>d.exists?(d.data().s||""):"").join("");
+    const obj = JSON.parse(json);
+    try{ localStorage.setItem(ck(id,"data5"), JSON.stringify(obj)); }catch(e){ return false; }
+    return true;
+  }catch(e){ return false; }
+}
+async function buildCircuitoIndex(){
+  if(circuitoIdxBuilding) return;
+  circuitoIdxBuilding = true;
+  try{
+    const clubes = clubStore.get().filter(c=>!c.circuito);
+    if(cloudOn()) await Promise.all(clubes.map(c=>fetchClubDataSilent(c.id)));
+    const idx = {};
+    clubes.forEach(c=>{
+      const obj = loadClubData5(c.id);
+      if(!obj || !obj.modalidades) return;
+      Object.values(obj.modalidades).forEach(m=>{
+        if(!m || !m.ranking) return;
+        Object.values(m.ranking).forEach(rows=>{
+          (rows||[]).forEach(r=>{ const name=r&&r[0]; if(name && !(name in idx)) idx[name]=c.id; });
+        });
+      });
+    });
+    circuitoIdx = idx; circuitoIdxReady = true;
+  } finally{ circuitoIdxBuilding = false; }
+  if(CLUB_ID && isCircuitoClub()) render();
+}
 function isCircuitoClub(){ const c=clubStore.get().find(x=>x.id===CLUB_ID); return !!(c&&c.circuito); }
 function canEditOwnFoto(name){ return !!(name && isCircuitoClub() && state.profile && state.profile===name); }
 /* Lista de clubes "reales" (no el propio Circuito Abierto) para sugerir en el campo Club */
 function clubNameOptions(){ return clubStore.get().filter(c=>!c.circuito).map(c=>c.nombre); }
+/* Club (y escudo) de un jugador dentro del Circuito Abierto: manual si se cargó a mano,
+   si no lo que haya detectado automáticamente buildCircuitoIndex(). */
+function playerClubInfo(name){
+  if(!isCircuitoClub()) return null;
+  const manual = (data.jugadores&&data.jugadores[name]&&data.jugadores[name].club)||"";
+  if(manual){ const c=clubStore.get().find(x=>x.nombre===manual); return {id:c&&c.id,nombre:manual,escudo:(c&&c.escudo)||""}; }
+  const id = circuitoIdx[name]; if(!id) return null;
+  const c = clubStore.get().find(x=>x.id===id); if(!c) return null;
+  return {id:c.id,nombre:c.nombre,escudo:c.escudo||""};
+}
+function playerClub(name){ const info=playerClubInfo(name); return info?info.nombre:((data.jugadores&&data.jugadores[name]&&data.jugadores[name].club)||""); }
+function miniShieldHTML(info){
+  if(!info) return "";
+  return info.escudo ? `<img class="pclub-logo" src="${esc(info.escudo)}" alt="" title="${esc(info.nombre)}">`
+    : `<span class="pclub-logo pclub-logo-ph" style="background:${clubColor(info.id||info.nombre)}" title="${esc(info.nombre)}">${esc(initials(info.nombre))}</span>`;
+}
 function roundsOf(tid,cat){ const r=M().resultados[tid]; return (r&&r[cat])||[]; }
 function playerMatches(name,allYears=false){
   const out=[];
@@ -2406,14 +2465,15 @@ function vPartidos(){
       <label class="btn ghost sm filebtn">${foto?"Cambiar foto":"Subir foto"}<input type="file" accept="image/*" id="upJugadorFoto"></label>
       ${foto?`<button class="btn ghost sm" data-act="rm-foto-jugador">Quitar</button>`:""}
     </div>` : "";
-  /* En el Circuito Abierto, cada jugador viene de un club distinto: se puede indicar cuál,
-     y lo edita el admin o el propio jugador sobre su perfil guardado. */
+  /* En el Circuito Abierto, el club de cada jugador se detecta solo (buildCircuitoIndex, buscando
+     su nombre en el ranking de los demás clubes). El campo de acá es solo por si hay que corregirlo. */
+  const clubInfo = isCircuitoClub() ? playerClubInfo(p.name) : null;
   const canClub = isCircuitoClub() && (state.admin || isProfile);
-  const clubEdit = canClub ? `<label class="f pc-club-edit">Club<input id="pJugadorClub" list="clubOptsDl" autocomplete="off" placeholder="Club de origen (opcional)" value="${esc(playerClub(p.name))}"></label>
+  const clubEdit = canClub ? `<label class="f pc-club-edit">Club (se detecta solo; corregilo si hace falta)<input id="pJugadorClub" list="clubOptsDl" autocomplete="off" placeholder="Club de origen" value="${esc(playerClub(p.name))}"></label>
       <datalist id="clubOptsDl">${clubNameOptions().map(n=>`<option value="${esc(n)}">`).join("")}</datalist>` : "";
   return `<section class="wrap page"><div class="page-tools">${yearSel()}</div>
     <div class="pcard"><div class="pc-main">
-        <h1 class="display">${esc(s.ap)}</h1><span class="sub">${esc(s.nom)}${s.nom?", ":""}Categoría ${esc(catName(p.cat))}${modNote()}${isProfile?' <span class="me-tag">Tu perfil</span>':""}${isCircuitoClub()&&playerClub(p.name)&&!canClub?` <span class="pclub">${esc(playerClub(p.name))}</span>`:""}</span>
+        <h1 class="display">${esc(s.ap)}</h1><span class="sub">${esc(s.nom)}${s.nom?", ":""}Categoría ${esc(catName(p.cat))}${modNote()}${isProfile?' <span class="me-tag">Tu perfil</span>':""}${clubInfo?` <span class="pclub">${miniShieldHTML(clubInfo)}<span class="pclub-name">${esc(clubInfo.nombre)}</span></span>`:""}</span>
       <div class="pc-actions">${isProfile?`<button class="btn ghost sm" data-act="unprofile">Dejar de usar como mi perfil</button>`
         :`<button class="btn sm" data-act="profile">Guardar como mi perfil</button>`}<button class="btn ghost sm" data-act="pick">Elegir ${otroJugador()}</button></div>
       ${clubEdit}
