@@ -525,6 +525,20 @@ dialog.lb::backdrop{background:rgba(5,10,8,.88)}
 .club-btn .club-shield{width:120px;height:120px;font-size:2.4rem}
 .club-btn{padding:14px 12px}
 .club-btn span{font-weight:700;font-size:.88rem;line-height:1.2;word-break:break-word}
+/* En mobile las tarjetas grandes en columna ocupaban toda la pantalla y tapaban la cancha de fondo.
+   Pasa a una lista compacta: escudo chico + nombre en fila, así entran varios clubes sin scroll
+   y se sigue viendo el fondo alrededor. */
+@media (max-width:600px){
+  .clubs-grid{flex-direction:column;align-items:stretch;gap:10px}
+  .clubs-grid .club-btn{width:100%}
+  .club-btn{flex-direction:row;justify-content:flex-start;text-align:left;padding:10px 14px;gap:12px;
+    background:color-mix(in srgb,var(--surface) 80%,transparent)}
+  .club-btn:hover{transform:none}
+  .club-btn .club-shield{width:46px;height:46px;font-size:1.05rem}
+  .club-btn .club-shield.has-img{padding:4px}
+  .club-btn span{font-size:.95rem}
+  .gate-wrap{padding:26px 18px 14px}
+}
 .gate-empty{color:var(--muted);padding:26px 10px}
 .gate-pass{max-width:280px;margin:22px auto 0;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:22px;display:flex;flex-direction:column;gap:12px;align-items:center;
   animation:gpIn .28s ease both}
