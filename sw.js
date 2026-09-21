@@ -1,9 +1,9 @@
-/* Service worker de Torneos Tenis: deja abrir la app sin conexión.
+/* Service worker de Circuito Tenis: deja abrir la app sin conexión.
    - Páginas: primero la red (así siempre ves la versión nueva) y, si no hay internet o tarda, la última guardada.
    - Íconos, manifest y tipografías: se guardan y se actualizan solos.
    - Firebase/Firestore NO se toca: los datos se siguen sincronizando por su cuenta.
    Cuando cambies este archivo, subí el número de VERSION para limpiar lo guardado. */
-const VERSION = "v1";
+const VERSION = "v2";
 const CACHE = "torneos-" + VERSION;
 const PRECACHE = ["./", "manifest.webmanifest", "icon-192.png", "icon-512.png", "icon-maskable-512.png", "apple-touch-icon.png"];
 const ESPERA_RED = 3500; // ms antes de mostrar la copia guardada si la red no contesta
