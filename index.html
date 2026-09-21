@@ -525,6 +525,77 @@ dialog.lb::backdrop{background:rgba(5,10,8,.88)}
 .cloud-warn{display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:var(--surface-2);border:1px solid var(--line);border-left:3px solid #e0a32e;border-radius:10px;padding:9px 12px;font-size:.88rem;margin:0 0 10px}
 .exit-btn{background:none;border:1px solid var(--line);border-radius:8px;width:38px;height:38px;display:grid;place-items:center;cursor:pointer;color:var(--muted)}
 .exit-btn:hover{color:var(--text);border-color:var(--line-strong)}
+
+/* ================= Compartir, inscribirse, carga rápida, modo pantalla ================= */
+.btn.wa{background:#1FA855;color:#fff}
+.btn.wa:hover{background:#178A45}
+.tinscribe{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;margin:-4px 0 16px}
+.tinscribe small{color:var(--muted)}
+dialog.sheet{border:0;padding:0;background:var(--surface);color:var(--text);border-radius:16px;width:min(92vw,440px);box-shadow:0 24px 60px rgba(0,0,0,.45)}
+dialog.sheet::backdrop{background:rgba(5,10,8,.72)}
+.sheet-in{display:flex;flex-direction:column;gap:14px;padding:24px}
+.sheet-in h2{font-stretch:66%;font-weight:900;font-size:2.4rem;line-height:.95;margin:0}
+.sheet-in .sub{margin:-8px 0 0;color:var(--muted)}
+.sheet-in .hint{margin:0;color:var(--muted);font-size:.85rem}
+.sheet-in .f input,.sheet-in .f select{padding:12px;font-size:1rem}
+.sheet-btns{display:flex;gap:10px}
+.sheet-btns .btn{flex:1;padding:13px 16px}
+
+/* Carga de resultados, un partido por pantalla */
+.seg .cnt{opacity:.65;font-size:.78em;margin-left:2px}
+.mcard{background:var(--surface-2);border:1px solid var(--line);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:12px}
+.mc-top{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.mc-count{font-stretch:80%;font-weight:800;font-size:1.15rem}
+.mcard .f input{font-size:1.05rem;padding:12px}
+.mc-name.win input{border-color:var(--ball);box-shadow:0 0 0 1px var(--ball) inset}
+.mc-swap{align-self:center}
+.sc-heads,.sc-row{display:grid;grid-template-columns:4rem minmax(0,1fr) 1rem minmax(0,1fr);gap:8px;align-items:center}
+.sc-heads{font-size:.75rem;font-weight:700;color:var(--muted);text-align:center}
+.sc-heads span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sc-grid{display:grid;gap:8px}
+.sc-lab{color:var(--muted);font-weight:700;font-size:.85rem}
+.sc-dash{text-align:center;color:var(--muted);font-weight:800}
+.sc-row input{width:100%;text-align:center;font-size:1.7rem;font-weight:800;padding:10px 4px;border:1px solid var(--line-strong);background:var(--bg);border-radius:10px;color:var(--text);-moz-appearance:textfield}
+.sc-row input::-webkit-outer-spin-button,.sc-row input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.sc-row input:disabled{opacity:.35}
+.mc-flags{display:flex;gap:8px;flex-wrap:wrap}
+.mc-nav,.mc-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.mcard .btn{padding:14px 16px;font-size:1rem}
+.mcard .btn:disabled{opacity:.4;cursor:default}
+
+/* Modo pantalla del club */
+html[data-screen="1"]{font-size:clamp(14px,1.05vw,44px)}
+html[data-screen="1"] body{font-size:1rem}
+html[data-screen="1"] .topbar,html[data-screen="1"] .tabbar,html[data-screen="1"] #adminbar{display:none}
+html[data-screen="1"] .wrap{max-width:none}
+.scr{min-height:100vh;display:flex;flex-direction:column;gap:1rem;padding:1.2rem 2.2vw 1rem}
+.scr-head{display:flex;align-items:center;gap:1.1rem}
+.scr-head .club-shield{flex:none;width:3.6rem;height:3.6rem;font-size:1.2rem}
+.scr-head h1{margin:0;font-stretch:66%;font-weight:900;font-size:clamp(2rem,3.2vw,4.2rem);line-height:.92}
+.scr-head .sub{margin:.3rem 0 0;color:var(--muted);font-size:1.15rem}
+.scr-clock{margin-left:auto;font-stretch:70%;font-weight:850;font-size:2.2rem;font-variant-numeric:tabular-nums}
+.scr-body{flex:1;min-height:0;animation:scrIn .5s ease both}
+@keyframes scrIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.scr .bracket{min-height:calc(100vh - 13rem)}
+.scr .matches .sb{font-size:1.2rem}
+.scr .matches{gap:1rem}
+.scr-img{display:block;max-width:100%;max-height:calc(100vh - 12rem);margin:0 auto;border-radius:12px}
+.scr-foot{display:flex;align-items:center;gap:1rem;color:var(--muted);font-size:.8rem}
+.scr-dots{display:flex;gap:.45rem;margin-right:auto}
+.scr-dots i{width:.6rem;height:.6rem;border-radius:50%;background:var(--line-strong)}
+.scr-dots i.on{background:var(--ball)}
+.scr-ctl{display:flex;flex-wrap:wrap;gap:.4rem;opacity:.35;transition:opacity .2s}
+.scr:hover .scr-ctl,.scr-ctl:focus-within{opacity:1}
+.scr-ctl button{border:1px solid var(--line-strong);background:var(--surface);color:var(--text);border-radius:8px;padding:.35rem .8rem;font-weight:700;font-size:.8rem;cursor:pointer}
+.sch{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.6rem 1.6rem;align-content:start}
+@media (max-width:900px){.sch{grid-template-columns:1fr}}
+.sch-day{grid-column:1/-1;font-stretch:75%;font-weight:850;font-size:1.4rem;margin:.5rem 0 0;color:var(--muted)}
+.sch-row{display:grid;grid-template-columns:6rem 7.5rem minmax(0,1fr) auto;align-items:center;gap:.8rem;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:.7rem 1rem}
+.sch-h{font-stretch:70%;font-weight:850;font-size:2rem;font-variant-numeric:tabular-nums}
+.sch-c{color:var(--muted);font-weight:700;font-size:1.1rem}
+.sch-m{font-weight:700;font-size:1.3rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sch-m em{color:var(--muted);font-style:normal;font-weight:500;margin:0 .5em}
+.sch-t{font-size:.72rem;font-weight:800;color:var(--muted);background:var(--surface-2);padding:.15rem .65rem;border-radius:99px;white-space:nowrap}
 </style>
 </head>
 <body>
@@ -600,6 +671,8 @@ dialog.lb::backdrop{background:rgba(5,10,8,.88)}
 </dialog>
 </div>
 
+<dialog class="sheet" id="insDlg" aria-label="Inscribirme"><div id="insBody"></div></dialog>
+
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
@@ -633,6 +706,13 @@ const CHUNK = 400000;
 let fdb = null, cloudOK = false, cloudErr = "", applyingCloud = false;
 let unsubClubes = null, unsubData = null, pendingCloudRev = null;
 let deletingClubIds = new Set(); // clubes que se estan borrando en la nube: no resucitarlos si llega un snapshot viejo
+
+/* Links compartidos: ?c=<club>&m=<modalidad>&g=<género>&y=<año>&k=<categoría>&r=<ronda>#<sección>.
+   Quien abre el link entra directo al club como jugador (solo lectura) y cae en esa sección. */
+const LINK = (()=>{ try{ const q=new URLSearchParams(location.search), c=q.get("c"); if(!c) return null;
+  return {c, m:q.get("m")||"", g:q.get("g")||"", y:q.get("y")||"", k:q.get("k")||"", r:q.get("r")||"", hash:location.hash||""}; }catch(e){ return null; } })();
+let linkPending = !!LINK, linkApply = null, linkRound = null;
+
 
 function setSync(estado, texto){
   ["syncStateGate","syncStateApp"].forEach(id=>{
@@ -690,6 +770,7 @@ function cloudWatchClubes(){
     applyingCloud = false;
     if(soloLocales.length) soloLocales.forEach(c=>cloudPushClub(c)); // reintento de subida
     aReparar.forEach(c=>cloudPushClub(c)); // completa en la nube lo que le faltaba al club
+    if(linkPending) tryDeepLink(); // link compartido: en un celular nuevo el club recién aparece ahora
     if(document.getElementById("gateRoot").style.display !== "none") renderGate();
     if(CLUB_ID){ const c = remotos.find(x=>x.id===CLUB_ID);
       const lab = document.getElementById("clubCityLabel"); if(c && lab) lab.textContent = c.nombre; }
@@ -842,6 +923,30 @@ const clubStore = {
   clubStore.set(hasLegacy ? [{id:"legacy",nombre:"Club",escudo:"",clave:"100"}] : []);
 })();
 
+function applyLinkState(L){
+  const key = L.m+"-"+L.g;
+  if(MODS.some(([v])=>v===L.m) && GENS.some(([v])=>v===L.g) && data.modalidades[key]){
+    store.set("mod",L.m); store.set("genero",L.g); state.mod=L.m; state.genero=L.g; state.profile=loadProfile(genKey());
+  }
+  if(L.y){ store.set("anio",L.y); state.anio=L.y; }
+  if(L.k){ store.set("cat",L.k); state.cat=L.k; } // si todavía no bajaron los datos, se valida al dibujar
+  if(L.r!=="" && Number.isFinite(+L.r) && /^#resultados/.test(L.hash)) linkRound=Math.max(0,+L.r);
+}
+/* Se llama al arrancar y cada vez que llega la lista de clubes de la nube (en un celular nuevo todavía no está). */
+function tryDeepLink(){
+  if(!linkPending || !LINK) return false;
+  const club = clubStore.get().find(c=>c.id===LINK.c);
+  if(!club) return false;
+  linkPending = false;
+  let rol = "jugador";
+  try{ if(sessionStorage.getItem("liga_sesion")==="admin:"+club.id) rol="admin"; }catch(e){}
+  try{ sessionStorage.setItem("liga_sesion", rol+":"+club.id); }catch(e){}
+  if(LINK.hash!=="#pantalla"){ try{ history.replaceState(null,"",location.pathname+location.hash); }catch(e){} } // el link de la tele conserva el club para sobrevivir a un F5
+  linkApply = LINK;
+  enterClub(club.id, rol);
+  return true;
+}
+
 let gateSel = null; // id del club elegido en el portón, a la espera de la clave
 let gateMode = "admin"; // "admin" (entra con la clave del club) | "player" (elige un club y entra sin clave, solo lectura)
 
@@ -849,7 +954,7 @@ function renderGate(){
   const clubes = clubStore.get();
   const player = gateMode==="player";
   if(player) gateSel = null;
-  document.getElementById("gateLede").textContent = player ? "Jugadores: elegí el club para ver sus torneos y rankings" : "Administradores: elegí tu club para entrar";
+  document.getElementById("gateLede").textContent = linkPending ? "Abriendo el link que te compartieron…" : (player ? "Jugadores: elegí el club para ver sus torneos y rankings" : "Administradores: elegí tu club para entrar");
   const pb = document.getElementById("playerEnterBtn");
   pb.textContent = player ? "Soy administrador" : "Soy jugador";
   pb.className = "btn"+(player?" ghost":"");
@@ -913,11 +1018,13 @@ function bootApp(id, rol){
   CLUB_ID = id;
   if(esAdmin) claimLegacyData();
   loadClubState();
+  if(linkApply) applyLinkState(linkApply);
   state.rol = rol; state.admin = esAdmin; state.draft = esAdmin ? clone(data) : null;
   try{ esAdmin ? sessionStorage.setItem("liga:admin","1") : sessionStorage.removeItem("liga:admin"); }catch(e){}
   const club = clubStore.get().find(c=>c.id===id);
   document.getElementById("clubCityLabel").textContent = club ? club.nombre : "";
-  location.hash = "";
+  location.hash = linkApply ? linkApply.hash : "";
+  linkApply = null;
   render();
   window.scrollTo(0,0);
   cloudWatchData(id);
@@ -1628,7 +1735,7 @@ function vRanking(){
   return `<section class="wrap page">
     <div class="page-head"><div><h1 class="display">Ranking${modNote()}</h1><p class="sub">${curYear()==="todos"?"Puntos sumando todos los años.":`Temporada ${esc(curYear())}.`} ${editLink("ranking")}</p></div>
       <div class="controls">${yearSel()}<div class="scroll-x"><div class="seg" role="group" aria-label="Categoría">${cs.map(c=>`<button data-cat="${esc(c.id)}" aria-pressed="${state.cat===c.id}">Cat. ${esc(c.nombre)}</button>`).join("")}</div></div>
-        <label class="search">${icon("search")}<span class="sr">Buscar</span><input id="rankSearch" type="search" placeholder="Buscar ${who()}" value="${esc(state.q)}"></label></div></div>
+        <label class="search">${icon("search")}<span class="sr">Buscar</span><input id="rankSearch" type="search" placeholder="Buscar ${who()}" value="${esc(state.q)}"></label>${rows.length?shareBtn("rank"):""}</div></div>
     <div class="legend" aria-label="Referencias"><span>${pill(100)} Campeón</span><span>${pill(80)} Final</span><span>${pill(60)} Semi</span>
       <span>${pill(40)} Cuartos</span><span>${pill(20)} Octavos</span><span>${pill(10)} 16avos</span>${rows.some(r=>cols.some(({k})=>+r.pts[k]===5))?`<span>${pill(5)} Ronda previa</span>`:""}<span>${pill(null)} No jugó</span></div>
     ${rows.length?`<div class="table-box scroll-x"><table class="rank"><thead><tr><th style="width:3.2rem">#</th><th class="left">${state.genero==="damas"?"Jugadora":"Jugador"}</th>
@@ -1664,6 +1771,7 @@ function vTorneos(){
       return `<article class="tcard${live?" live":""}"><span class="tnode" aria-hidden="true">${i+1}</span>
         <button type="button" class="thead" data-ttoggle="${esc(t.id)}" aria-expanded="${open}"><h2>${esc(t.nombre)}</h2><span class="dates">${esc(t.etiqueta)}${t.fechas?", "+esc(t.fechas):""}</span>
           <span class="chip ${t.estado==="Finalizado"?"fin":live?"live":""}">${esc(t.estado)}</span>${icon("chev","tchev")}</button>
+        ${t.estado==="Próximo"?inscribeRow(t):""}
         ${open?`<div class="tfinals">${tourCats(t).map(c=>final(t,c)).join("")}</div>`:`<p class="tsummary">${summary(t)}</p>`}</article>`; }).join("")}</div></section>`;
 }
 
@@ -1672,7 +1780,7 @@ function tourHead(t,c,mode){
   return `<div class="page-head"><div><h1 class="display">${esc(t.nombre)}${modNote()}</h1><p class="sub">Categoría ${esc(catName(c))} ${editLink("resultados")}</p></div>
     <div class="controls"><nav class="seg" aria-label="Vista">
       <a href="#resultados/${t.id}/${c}"${mode==="res"?' aria-current="page"':""}>Resultados</a><a href="#cuadro/${t.id}/${c}"${mode==="draw"?' aria-current="page"':""}>Cuadro</a></nav>
-      <div class="scroll-x"><nav class="seg" aria-label="Categoría">${tourCats(t).map(k=>`<a href="#${base}/${t.id}/${k.id}"${c===k.id?' aria-current="page"':""}>Cat. ${esc(k.nombre)}</a>`).join("")}</nav></div></div></div>`;
+      <div class="scroll-x"><nav class="seg" aria-label="Categoría">${tourCats(t).map(k=>`<a href="#${base}/${t.id}/${k.id}"${c===k.id?' aria-current="page"':""}>Cat. ${esc(k.nombre)}</a>`).join("")}</nav></div>${shareBtn(mode==="res"?"res":"draw",t.id,c)}</div></div>`;
 }
 const noRes = t => `<div class="empty"><strong>Todavía no hay resultados cargados</strong>Cuando la organización cargue los partidos de ${esc(t.nombre)}, van a aparecer acá.<br>
   <a class="btn ghost" href="#torneos">Volver a torneos</a></div>`;
@@ -1687,6 +1795,7 @@ function vResultados(tid,c){
   if(!t||!cid) return vTorneos();
   const rounds=roundsOf(t.id,cid).filter(r=>r.m.length);
   if(!rounds.length) return `<section class="wrap page">${tourHead(t,cid,"res")}${noRes(t)}</section>`;
+  if(linkRound!=null){ state.round=linkRound; linkRound=null; }
   const r=Math.min(state.round,rounds.length-1);
   const all=rounds.map(d=>`<div data-group><h2 class="round-label">${esc(d.name)}</h2><div class="matches">${d.m.map(m=>
     `<div data-m="${esc((m[0]+" "+m[1]).toLowerCase())}">${matchSB(m)}</div>`).join("")}</div></div>`).join("");
@@ -1698,21 +1807,19 @@ function vResultados(tid,c){
     <div id="searchView" hidden>${all}</div>
     <p class="note">El punto amarillo marca al ganador. Los sets sombreados son super tie-break. Un guion indica que el score no está cargado.</p></section>`;
 }
-function vCuadro(tid,c){
-  const {t,cid}=resolveTour(tid,c);
-  if(!t||!cid) return vTorneos();
-  const all=roundsOf(t.id,cid), names=["Octavos","Cuartos","Semifinal","Final"], need=[8,4,2,1];
+function roundsOfM(m,tid,cat){ const r=m.resultados[tid]; return (r&&r[cat])||[]; }
+/* Devuelve el cuadro dibujado, o "" si todavía faltan cruces. Recibe la modalidad para poder usarse también desde el modo pantalla. */
+function bracketHTML(m,t,cid){
+  const all=roundsOfM(m,t.id,cid), names=["Octavos","Cuartos","Semifinal","Final"], need=[8,4,2,1];
   const rounds=names.map(n=>all.find(r=>r.name===n));
-  if(!rounds.every((r,i)=>r&&r.m.length===need[i])) return `<section class="wrap page">${tourHead(t,cid,"draw")}<div class="empty"><strong>El cuadro todavía no está completo</strong>
-    Para dibujarlo hacen falta todos los cruces desde octavos. Mientras tanto podés ver los partidos cargados.<br>
-    <a class="btn ghost" href="#resultados/${t.id}/${cid}">Ver resultados</a></div></section>`;
+  if(!rounds.every((r,i)=>r&&r.m.length===need[i])) return "";
   const winners=[];
   const cols=rounds.map((rd,ri)=>{
-    const boxes=rd.m.map((m,mi)=>{
-      let top=m[0],bot=m[1];
-      if(ri>0){ const a=winners[ri-1][mi*2], b=winners[ri-1][mi*2+1]; if([a,b].includes(m[0])&&[a,b].includes(m[1])){top=a;bot=b;} }
-      (winners[ri]||(winners[ri]=[]))[mi]=m[0];
-      const sc=parseScore(m[2]), topWon=top===m[0];
+    const boxes=rd.m.map((mm,mi)=>{
+      let top=mm[0],bot=mm[1];
+      if(ri>0){ const a=winners[ri-1][mi*2], b=winners[ri-1][mi*2+1]; if([a,b].includes(mm[0])&&[a,b].includes(mm[1])){top=a;bot=b;} }
+      (winners[ri]||(winners[ri]=[]))[mi]=mm[0];
+      const sc=parseScore(mm[2]), topWon=top===mm[0];
       return scoreboard(top,bot,Array.isArray(sc)&&!topWon?flip(sc):sc,topWon,true,true);
     });
     let slots=""; if(boxes.length===1) slots=`<div class="single">${boxes[0]}</div>`;
@@ -1720,10 +1827,19 @@ function vCuadro(tid,c){
     return `<div class="bcol"><h3>${rd.name}</h3><div class="slots">${slots}</div></div>`;
   }).join("");
   const ch=dispSplit(rounds[3].m[0][0]);
-  return `<section class="wrap page">${tourHead(t,cid,"draw")}
-    <div class="bracket-box scroll-x"><div class="bracket">${cols}
+  return `<div class="bracket-box scroll-x"><div class="bracket">${cols}
       <div class="bcol"><h3>Campeón</h3><div class="slots"><div class="single"><div class="champ-card">${icon("trophy")}
-        <small>${esc(t.nombre)}, Cat. ${esc(catName(cid))}</small><strong>${esc(ch.ap)}</strong><small>${esc(ch.nom)}</small></div></div></div></div></div></div>
+        <small>${esc(t.nombre)}, Cat. ${esc(catName(cid,m))}</small><strong>${esc(ch.ap)}</strong><small>${esc(ch.nom)}</small></div></div></div></div></div></div>`;
+}
+function vCuadro(tid,c){
+  const {t,cid}=resolveTour(tid,c);
+  if(!t||!cid) return vTorneos();
+  const b=bracketHTML(M(),t,cid);
+  if(!b) return `<section class="wrap page">${tourHead(t,cid,"draw")}<div class="empty"><strong>El cuadro todavía no está completo</strong>
+    Para dibujarlo hacen falta todos los cruces desde octavos. Mientras tanto podés ver los partidos cargados.<br>
+    <a class="btn ghost" href="#resultados/${t.id}/${cid}">Ver resultados</a></div></section>`;
+  return `<section class="wrap page">${tourHead(t,cid,"draw")}
+    ${b}
     <p class="note">El cuadro arranca en octavos. Los 16avos están en <a href="#resultados/${t.id}/${cid}">Resultados</a>.</p></section>`;
 }
 
@@ -1929,16 +2045,13 @@ function aRes(){
   if(!t||!c) return `<div class="panel"><h2>Resultados</h2><p class="muted">Primero creá al menos un torneo y una categoría.</p></div>`;
   d.resultados[t]=d.resultados[t]||{};
   d.resultados[t][c]=ROUNDS.map(n=>({name:n,m:((d.resultados[t][c]||[]).find(r=>r.name===n)||{m:[]}).m}));
-  const base=P(`resultados.${t}.${c}`);
+  const rs=d.resultados[t][c], base=P(`resultados.${t}.${c}`);
+  const mode=state.resView||store.get("resview",matchMedia("(max-width:760px)").matches?"partido":"tabla");
   return `<div class="panel"><h2>Resultados de ${modGenLabel().toLowerCase()}</h2><p class="hint">El score va desde el lado del ganador, por ejemplo 6-3 3-6 10-8. Para un walkover escribí WO. Si no hay score, dejalo vacío.${state.mod==="dobles"?" En dobles, escribí cada pareja con los nombres del ranking separados por una barra (Perez, Juan / Lopez, Pedro), así cada uno ve el partido en su perfil.":""}</p>
     <div class="grid2"><label class="f">Torneo<select id="resT">${ts.map(x=>`<option value="${esc(x.id)}"${x.id===t?" selected":""}>${esc(x.nombre)}${x.anio?` (${esc(x.anio)})`:""}</option>`).join("")}</select></label>
       <label class="f">Categoría${cs.length>1?"":" (la del torneo)"}<select id="resC">${cs.map(k=>`<option value="${esc(k.id)}"${k.id===c?" selected":""}>Cat. ${esc(k.nombre)}</option>`).join("")}</select></label></div>
-    ${d.resultados[t][c].map((r,ri)=>`<div class="block"><div class="block-head"><strong>${r.name}</strong></div>
-      ${r.m.length?`<div class="scroll-x"><table class="etable"><thead><tr><th>Ganador</th><th>Perdedor</th><th>Score</th><th></th></tr></thead><tbody>
-      ${r.m.map((m,mi)=>`<tr>${C(`${base}.${ri}.m.${mi}.0`,m[0],'list="dlPlayers"')}${C(`${base}.${ri}.m.${mi}.1`,m[1],'list="dlPlayers"')}
-        ${C(`${base}.${ri}.m.${mi}.2`,m[2],'style="width:150px" placeholder="6-4 6-2"')}<td>${IB("del-m",`${ri}.${mi}`,"trash","Borrar partido")}</td></tr>`).join("")}
-      </tbody></table></div>`:`<p class="muted" style="margin:0">Sin partidos en esta ronda.</p>`}
-      <div><button type="button" class="btn ghost sm" data-act="add-m" data-i="${ri}">${icon("plus")}Agregar partido</button></div></div>`).join("")}
+    <div class="scroll-x"><div class="seg" role="group" aria-label="Cómo cargar"><button type="button" data-resview="partido" aria-pressed="${mode==="partido"}">Un partido a la vez</button><button type="button" data-resview="tabla" aria-pressed="${mode==="tabla"}">Tabla</button></div></div>
+    ${mode==="partido"?resCard(rs,base):resTable(rs,base)}
     <p class="hint" style="margin:0">Para que se dibuje el cuadro hacen falta 8 partidos en octavos, 4 en cuartos, 2 en semis y la final, en el orden del cuadro.</p></div>`;
 }
 function aFotos(){
@@ -2047,6 +2160,11 @@ function adminAction(act,el){
       else { const names=adminOrder(m,c).map(g=>rows[g][0]); swap(names,n,to); m.desempate=m.desempate||{}; m.desempate[y]=m.desempate[y]||{}; m.desempate[y][c]=names; }
       break; }
     case "add-m": m.resultados[state.adminRes.t][state.adminRes.c][n].m.push(["","",""]); break;
+    case "add-m2": { const arr=m.resultados[state.adminRes.t][state.adminRes.c][n].m; arr.push(["","",""]); state.resRound=n; state.resIdx=arr.length-1; break; }
+    case "swap-m": { const [ri,mi]=i.split(".").map(Number), mm=m.resultados[state.adminRes.t][state.adminRes.c][ri].m[mi];
+      [mm[0],mm[1]]=[mm[1],mm[0]]; const sc=parseScore(mm[2]);
+      if(Array.isArray(sc)){ const f=flip(sc); mm[2]=f.map(x=>x.join("-")).join(" ")+(f.ret?(f.length?" ret":"ret"):""); } break; }
+    case "save-next": adminAction("save",el); state.resIdx=(state.resIdx==null?0:state.resIdx)+1; break;
     case "del-m": { const [ri,mi]=i.split(".").map(Number); m.resultados[state.adminRes.t][state.adminRes.c][ri].m.splice(mi,1); break; }
     case "del-f": d.fotos.splice(n,1); break;
     case "del-placeholders": d.fotos=d.fotos.filter(f=>f.src); break;
@@ -2090,14 +2208,241 @@ function adminAction(act,el){
 }
 function logout(){ exitToGate(); }
 
+/* ================= Compartir por WhatsApp ================= */
+const plainName = n => { const one = x => { const s=split(x); return ((s.nom?s.nom+" ":"")+s.ap).trim(); };
+  return isTeam(n) ? teamParts(n).map(one).join(" / ") : one(n); };
+const baseUrl = () => location.href.split("#")[0].split("?")[0];
+function shareUrl(hash,extra){
+  const p = new URLSearchParams({c:CLUB_ID, m:state.mod, g:state.genero, y:curYear()});
+  Object.entries(extra||{}).forEach(([k,v])=>{ if(v!==""&&v!=null) p.set(k,v); });
+  return baseUrl()+"?"+p.toString()+hash;
+}
+function openURL(u){ const a=document.createElement("a"); a.href=u; a.target="_blank"; a.rel="noopener"; document.body.appendChild(a); a.click(); a.remove(); }
+const shareBtn = (k,t,c) => `<button type="button" class="btn ghost sm" data-share="${k}"${t?` data-t="${esc(t)}" data-c="${esc(c)}"`:""}>${icon("whatsapp")}Compartir</button>`;
+function shareAction(kind,tid,cid){
+  const club=clubName(), lbl=modGenLabel(), yr=curYear()==="todos"?"":" "+curYear();
+  let text="";
+  if(kind==="rank"){
+    const rows=ranked(state.cat).slice(0,3), medal=["🥇","🥈","🥉"];
+    text=`🎾 *Ranking Cat. ${catName(state.cat)}* · ${lbl}${yr}\n${club}\n\n`
+      +(rows.length?rows.map((r,i)=>`${medal[i]} ${plainName(r.name)} (${r.total} pts)`).join("\n")+"\n\n":"")
+      +`Ranking completo:\n${shareUrl("#ranking",{k:state.cat})}`;
+  } else {
+    const t=M().torneos.find(x=>x.id===tid); if(!t) return;
+    const head=`🎾 *${t.nombre}* · Cat. ${catName(cid)}\n${lbl}${yr} · ${club}\n\n`;
+    if(kind==="res"){
+      const rounds=roundsOf(t.id,cid).filter(r=>r.m.length), r=rounds[Math.min(state.round,rounds.length-1)];
+      const lines=r?`*${r.name}*\n`+r.m.slice(0,12).map(m=>{ const sc=scoreText(parseScore(m[2])).replace(/\s{2,}/g," ").trim();
+        return `• ${plainName(m[0])} le ganó a ${plainName(m[1])}${sc?" "+sc:""}`; }).join("\n")+"\n\n":"";
+      text=head+lines+`Todos los resultados:\n${shareUrl("#resultados/"+t.id+"/"+cid,{r:r?rounds.indexOf(r):""})}`;
+    } else {
+      const fin=roundsOf(t.id,cid).find(r=>r.name==="Final"), champ=fin&&fin.m[0]&&fin.m[0][0];
+      text=head+(champ?`🏆 Campeón: ${plainName(champ)}\n\n`:"")+`Mirá el cuadro completo:\n${shareUrl("#cuadro/"+t.id+"/"+cid)}`;
+    }
+  }
+  if(location.protocol==="file:") toast("Ojo: para que el link abra en otros celulares, la app tiene que estar publicada online");
+  openURL("https://wa.me/?text="+encodeURIComponent(text));
+}
+
+/* ================= Inscribirme (WhatsApp del organizador) ================= */
+function orgWA(){
+  const v=String((data.club&&data.club.redes&&data.club.redes.whatsapp)||"").trim(); if(!v) return "";
+  const m=v.match(/wa\.me\/(\d+)/i)||v.match(/[?&]phone=(\d+)/i); if(m) return m[1];
+  if(/^https?:/i.test(v)) return "";
+  const n=v.replace(/\D/g,""); return n.length>=8?n:"";
+}
+function inscribeRow(t){
+  if(orgWA()) return `<div class="tinscribe"><button type="button" class="btn wa" data-inscribir="${esc(t.id)}">${icon("whatsapp")}Inscribirme</button><small>Se abre WhatsApp con el mensaje ya escrito.</small></div>`;
+  return state.admin?`<div class="tinscribe"><small>Para que aparezca el botón "Inscribirme", cargá el WhatsApp del club en <a href="#admin" data-admintab="club">Ubicación y redes</a>.</small></div>`:"";
+}
+function openInscribir(tid){
+  const t=M().torneos.find(x=>x.id===tid), wa=orgWA(); if(!t||!wa) return;
+  const cs=tourCats(t), cat=cs.find(c=>c.id===state.cat)?state.cat:(cs[0]||{}).id;
+  const dlg=document.getElementById("insDlg"), body=document.getElementById("insBody");
+  body.innerHTML=`<div class="sheet-in"><h2>Inscribirme</h2>
+    <p class="sub">${esc(t.nombre)} · ${esc(modGenLabel())}${t.anio?" · "+esc(t.anio):""}</p>
+    <label class="f">Tu nombre y apellido<input id="insNom" autocomplete="name" value="${esc(state.profile?plainName(state.profile):"")}"></label>
+    ${isDobles()?`<label class="f">Tu pareja (nombre y apellido)<input id="insPar" autocomplete="off"></label>`:""}
+    <label class="f">Categoría<select id="insCat">${cs.map(c=>`<option value="${esc(c.id)}"${c.id===cat?" selected":""}>Cat. ${esc(c.nombre)}</option>`).join("")}</select></label>
+    <p class="hint">Se abre WhatsApp con el mensaje listo para la organización. Solo tenés que enviarlo.</p>
+    <div class="sheet-btns"><button type="button" class="btn ghost" id="insCancel">Cancelar</button><button type="button" class="btn wa" id="insGo">${icon("whatsapp")}Abrir WhatsApp</button></div></div>`;
+  document.getElementById("insCancel").onclick=()=>dlg.close();
+  document.getElementById("insGo").onclick=()=>{
+    const nom=document.getElementById("insNom").value.trim(), par=isDobles()?document.getElementById("insPar").value.trim():"";
+    if(!nom){ toast("Escribí tu nombre"); return; }
+    if(isDobles()&&!par){ toast("Escribí el nombre de tu pareja"); return; }
+    const cid=document.getElementById("insCat").value;
+    const msg=`Hola! Quiero inscribirme al torneo *${t.nombre}*${t.anio?" ("+t.anio+")":""}.\n`
+      +`Modalidad: ${modGenLabel()}\nCategoría: ${catName(cid)}\nNombre: ${nom}\n`+(par?`Pareja: ${par}\n`:"")+`Gracias!`;
+    openURL(`https://wa.me/${wa}?text=${encodeURIComponent(msg)}`); dlg.close();
+  };
+  dlg.showModal();
+}
+document.getElementById("insDlg").addEventListener("click",e=>{ if(e.target===e.currentTarget) e.currentTarget.close(); });
+
+/* ================= Carga rápida de resultados (un partido por pantalla) ================= */
+function resDefaultRound(rs){
+  let i=rs.findIndex(r=>r.m.some(x=>(x[0]||x[1])&&!String(x[2]||"").trim()));
+  if(i<0){ for(let k=rs.length-1;k>=0;k--) if(rs[k].m.length){ i=k; break; } }
+  return i<0?0:i;
+}
+function resTable(rs,base){
+  return rs.map((r,ri)=>`<div class="block"><div class="block-head"><strong>${r.name}</strong></div>
+      ${r.m.length?`<div class="scroll-x"><table class="etable"><thead><tr><th>Ganador</th><th>Perdedor</th><th>Score</th><th></th></tr></thead><tbody>
+      ${r.m.map((m,mi)=>`<tr>${C(`${base}.${ri}.m.${mi}.0`,m[0],'list="dlPlayers"')}${C(`${base}.${ri}.m.${mi}.1`,m[1],'list="dlPlayers"')}
+        ${C(`${base}.${ri}.m.${mi}.2`,m[2],'style="width:150px" placeholder="6-4 6-2"')}<td>${IB("del-m",`${ri}.${mi}`,"trash","Borrar partido")}</td></tr>`).join("")}
+      </tbody></table></div>`:`<p class="muted" style="margin:0">Sin partidos en esta ronda.</p>`}
+      <div><button type="button" class="btn ghost sm" data-act="add-m" data-i="${ri}">${icon("plus")}Agregar partido</button></div></div>`).join("");
+}
+function resCard(rs,base){
+  let ri=state.resRound; if(ri==null||ri<0||ri>=rs.length) ri=state.resRound=resDefaultRound(rs);
+  const list=rs[ri].m;
+  let mi=state.resIdx; if(mi==null) mi=Math.max(0,list.findIndex(x=>(x[0]||x[1])&&!String(x[2]||"").trim()));
+  mi=Math.min(Math.max(mi,0),Math.max(list.length-1,0)); state.resIdx=mi;
+  const chips=`<div class="scroll-x"><div class="seg" role="group" aria-label="Ronda">${rs.map((r,k)=>
+    `<button type="button" data-resround="${k}" aria-pressed="${k===ri}">${esc(r.name)}${r.m.length?`<span class="cnt">${r.m.length}</span>`:""}</button>`).join("")}</div></div>`;
+  if(!list.length) return chips+`<div class="empty"><strong>Todavía no hay partidos en ${esc(rs[ri].name)}</strong><button type="button" class="btn" data-act="add-m2" data-i="${ri}">${icon("plus")}Agregar partido</button></div>`;
+  const m=list[mi], bp=`${base}.${ri}.m.${mi}`, sc=parseScore(m[2]);
+  const wo=sc==="WO", ret=Array.isArray(sc)&&!!sc.ret, sets=Array.isArray(sc)?sc:[];
+  const nm=(x,def)=>x?esc(dispSplit(x).ap):def;
+  const rows=[0,1,2].map(i=>{ const s=sets[i]||[];
+    return `<div class="sc-row"><span class="sc-lab">${i<2?"Set "+(i+1):"Set 3"}</span>
+      <input type="number" inputmode="numeric" min="0" max="99" data-set="${i}" data-side="0" value="${s[0]??""}" aria-label="Games de ${nm(m[0],"ganador")}, set ${i+1}"${wo?" disabled":""}>
+      <span class="sc-dash">–</span>
+      <input type="number" inputmode="numeric" min="0" max="99" data-set="${i}" data-side="1" value="${s[1]??""}" aria-label="Games de ${nm(m[1],"perdedor")}, set ${i+1}"${wo?" disabled":""}></div>`; }).join("");
+  const last=mi>=list.length-1;
+  return chips+`<div class="mcard" data-mcard>
+    <div class="mc-top"><span class="mc-count">Partido ${mi+1} de ${list.length}</span>${IB("del-m",`${ri}.${mi}`,"trash","Borrar partido")}</div>
+    <label class="f mc-name win">Ganador<input data-bind="${bp}.0" value="${esc(m[0])}" list="dlPlayers" autocomplete="off" placeholder="Apellido, Nombre"></label>
+    <button type="button" class="btn ghost sm mc-swap" data-act="swap-m" data-i="${ri}.${mi}">⇅ Intercambiar ganador y perdedor</button>
+    <label class="f mc-name">Perdedor<input data-bind="${bp}.1" value="${esc(m[1])}" list="dlPlayers" autocomplete="off" placeholder="Apellido, Nombre"></label>
+    <div class="sc-grid"><div class="sc-heads"><span></span><span>${nm(m[0],"Ganador")}</span><span></span><span>${nm(m[1],"Perdedor")}</span></div>${rows}</div>
+    <div class="mc-flags"><label class="check"><input type="checkbox" data-scflag="wo"${wo?" checked":""}>W.O.</label><label class="check"><input type="checkbox" data-scflag="ret"${ret?" checked":""}>Se retiró</label></div>
+    <label class="f">Score (se arma solo; también podés escribirlo)<input data-score data-rerender data-bind="${bp}.2" value="${esc(m[2])}" placeholder="6-4 3-6 10-8" autocomplete="off"></label>
+    <div class="mc-nav"><button type="button" class="btn ghost" data-resnav="-1"${mi===0?" disabled":""}>‹ Anterior</button><button type="button" class="btn ghost" data-resnav="1"${last?" disabled":""}>Siguiente ›</button></div>
+    <div class="mc-actions"><button type="button" class="btn ghost" data-act="add-m2" data-i="${ri}">${icon("plus")}Partido</button><button type="button" class="btn" data-act="save-next">${last?"Guardar":"Guardar y seguir"}</button></div>
+  </div>`;
+}
+function scoreFromGrid(card){
+  if(!card) return;
+  const q=s=>card.querySelector(s), wo=q('[data-scflag="wo"]').checked, rt=q('[data-scflag="ret"]').checked;
+  card.querySelectorAll("[data-set]").forEach(i=>{ i.disabled=wo; });
+  let out="";
+  if(wo) out="WO";
+  else { const sets=[];
+    for(let i=0;i<3;i++){ const a=q(`[data-set="${i}"][data-side="0"]`).value.trim(), b=q(`[data-set="${i}"][data-side="1"]`).value.trim();
+      if(a!==""&&b!=="") sets.push(Number(a)+"-"+Number(b)); }
+    out=sets.join(" ")+(rt?(sets.length?" ret":"ret"):""); }
+  q("[data-score]").value=out;
+}
+document.addEventListener("input",e=>{ const d=e.target.dataset; if(d&&(d.set!=null||d.scflag)) scoreFromGrid(e.target.closest("[data-mcard]")); });
+
+/* ================= Modo pantalla del club ================= */
+const SCR = {i:0,t:0,secs:15,paused:false,timer:null,wake:null};
+const norm = s => String(s||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase();
+const DIAS_ES = ["domingo","lunes","martes","miercoles","jueves","viernes","sabado"];
+const chunk = (a,n) => { const o=[]; for(let i=0;i<a.length;i+=n) o.push(a.slice(i,i+n)); return o; };
+function schedTag(h){
+  const key=h.mod||"singles-hombres", m=data.modalidades[key], c=m&&m.categorias.find(x=>x.id===h.cat);
+  return (c?"Cat. "+c.nombre:"")+(key!=="singles-hombres"?(c?" · ":"")+(MODCOMBO_LABEL()[key]||key):"");
+}
+function schedHTML(items){
+  const days=[]; items.forEach(h=>{ const k=h.dia||""; let d=days.find(x=>x.k===k); if(!d) days.push(d={k,l:[]}); d.l.push(h); });
+  const row=h=>`<div class="sch-row"><span class="sch-h">${esc(h.hora||"—")}</span><span class="sch-c">${esc(h.cancha||"")}</span>
+    <span class="sch-m">${esc(plainName(h.j1||"A definir"))}<em>vs</em>${esc(plainName(h.j2||"A definir"))}</span><span class="sch-t">${esc(schedTag(h))}</span></div>`;
+  return `<div class="sch">${days.map(d=>(days.length>1?`<h2 class="sch-day">${esc(d.k)}</h2>`:"")+d.l.map(row).join("")).join("")}</div>`;
+}
+function screenSlides(){
+  const out=[], inf=data.info||{};
+  if(inf.modo==="canchas" && (inf.horarios||[]).length){
+    const all=inf.horarios.filter(h=>h.j1||h.j2||h.hora), hoy=DIAS_ES[new Date().getDay()];
+    const de=all.filter(h=>norm(h.dia).includes(hoy)), items=(de.length?de:all).slice();
+    const order=[...new Set(items.map(h=>h.dia||""))];
+    items.sort((a,b)=>order.indexOf(a.dia||"")-order.indexOf(b.dia||"")||String(a.hora||"").localeCompare(String(b.hora||""),"es",{numeric:true}));
+    const pages=chunk(items,12), fecha=new Date().toLocaleDateString("es-AR",{weekday:"long",day:"numeric",month:"long"});
+    pages.forEach((p,k)=>out.push({kind:"sched",secs:15,title:de.length?"Horarios de hoy":(inf.titulo||"Horarios"),
+      sub:(de.length?fecha:"")+(pages.length>1?(de.length?" · ":"")+`${k+1}/${pages.length}`:""),html:schedHTML(p)}));
+  } else if(inf.modo==="foto" && inf.foto){
+    out.push({kind:"photo",secs:15,title:inf.titulo||"Horarios",sub:"",html:`<img class="scr-img" src="${esc(inf.foto)}" alt="${esc(inf.titulo||"Horarios")}">`});
+  }
+  const picks=[];
+  MODCOMBOS().forEach(([key,label])=>{
+    const m=data.modalidades[key]; if(!m||!(m.torneos||[]).length) return;
+    const live=m.torneos.filter(t=>t.estado==="En juego");
+    const fin=m.torneos.filter(t=>t.estado==="Finalizado").sort((a,b)=>String(a.anio||"").localeCompare(String(b.anio||"")));
+    const t=live.length?live[live.length-1]:fin[fin.length-1]; // sin nada en juego, el último torneo terminado
+    if(t) picks.push({key,label,m,t,live:!!live.length});
+  });
+  const anyLive=picks.some(p=>p.live); // con un torneo en juego, la tele muestra solo lo que se está jugando
+  picks.filter(p=>!anyLive||p.live).forEach(({key,label,m,t})=>{
+    tourCats(t,m).forEach(c=>{
+      const b=bracketHTML(m,t,c.id), tag=`Cat. ${c.nombre}${key!=="singles-hombres"?" · "+label:""}`;
+      if(b){ out.push({kind:"draw",secs:20,title:t.nombre,sub:`Cuadro · ${tag}`,html:b}); return; }
+      const rs=roundsOfM(m,t.id,c.id).filter(r=>r.m.length); if(!rs.length) return;
+      const r=rs[rs.length-1], pages=chunk(r.m,8);
+      pages.forEach((p,k)=>out.push({kind:"res",secs:15,title:t.nombre,sub:`${r.name} · ${tag}${pages.length>1?` · ${k+1}/${pages.length}`:""}`,
+        html:`<div class="matches">${p.map(x=>matchSB(x)).join("")}</div>`}));
+    });
+  });
+  return out;
+}
+function vPantalla(){
+  const slides=screenSlides(), n=slides.length;
+  const club=clubStore.get().find(c=>c.id===CLUB_ID);
+  const clock=new Date().toLocaleTimeString("es-AR",{hour:"2-digit",minute:"2-digit"});
+  const idx=n?((SCR.i%n)+n)%n:0; SCR.i=idx; const s=slides[idx]; if(s) SCR.secs=s.secs;
+  const head=(title,sub)=>`<div class="scr-head">${club?`<span ${shieldAttrs(club)}>${shieldHTML(club)}</span>`:""}
+    <div><h1>${esc(title)}</h1>${sub?`<p class="sub">${esc(sub)}</p>`:""}</div><span class="scr-clock" id="scrClock">${clock}</span></div>`;
+  const foot=`<div class="scr-foot"><div class="scr-dots">${slides.map((_,k)=>`<i${k===idx?' class="on"':""}></i>`).join("")}</div>
+    <div class="scr-ctl" role="group" aria-label="Controles de la pantalla"><button type="button" data-scr="prev">‹</button>
+    <button type="button" data-scr="pause">${SCR.paused?"Seguir":"Pausa"}</button><button type="button" data-scr="next">›</button>
+    <button type="button" data-scr="full">Pantalla completa</button><button type="button" data-scr="link">Copiar link para la tele</button><button type="button" data-scr="exit">Salir</button></div></div>`;
+  if(!s) return `<section class="scr">${head(club?club.nombre:"Torneos","")}<div class="scr-body"><div class="empty"><strong>Todavía no hay nada para mostrar</strong>Cargá horarios o resultados desde el panel y van a aparecer acá solos.</div></div>${foot}</section>`;
+  return `<section class="scr">${head(s.title,s.sub)}<div class="scr-body">${s.html}</div>${foot}</section>`;
+}
+function screenTick(){
+  if(location.hash.replace(/^#/,"").split("/")[0]!=="pantalla"){ screenStop(); return; }
+  const el=document.getElementById("scrClock"); if(el) el.textContent=new Date().toLocaleTimeString("es-AR",{hour:"2-digit",minute:"2-digit"});
+  if(SCR.paused) return;
+  if(++SCR.t>=SCR.secs){ SCR.i++; SCR.t=0; render(); }
+}
+function screenStart(){
+  if(!SCR.timer) SCR.timer=setInterval(screenTick,1000);
+  if(!SCR.wake && navigator.wakeLock && !document.hidden){ // que la tele no se apague sola
+    navigator.wakeLock.request("screen").then(l=>{ SCR.wake=l; l.addEventListener("release",()=>{ SCR.wake=null; }); }).catch(()=>{}); }
+}
+function screenStop(){
+  if(SCR.timer){ clearInterval(SCR.timer); SCR.timer=null; }
+  if(SCR.wake){ try{ SCR.wake.release(); }catch(e){} SCR.wake=null; }
+}
+function screenAction(a){
+  if(a==="prev"){ SCR.i--; SCR.t=0; render(); }
+  else if(a==="next"){ SCR.i++; SCR.t=0; render(); }
+  else if(a==="pause"){ SCR.paused=!SCR.paused; render(); }
+  else if(a==="full"){ if(document.fullscreenElement) document.exitFullscreen(); else if(document.documentElement.requestFullscreen) document.documentElement.requestFullscreen().catch(()=>toast("Este navegador no permite pantalla completa")); }
+  else if(a==="link"){ const url=baseUrl()+"?c="+encodeURIComponent(CLUB_ID)+"#pantalla";
+    if(navigator.clipboard&&navigator.clipboard.writeText) navigator.clipboard.writeText(url).then(()=>toast("Link copiado. Abrilo en el navegador de la tele.")).catch(()=>prompt("Copiá este link:",url));
+    else prompt("Copiá este link:",url); }
+  else if(a==="exit"){ if(document.fullscreenElement) document.exitFullscreen(); location.hash=""; }
+}
+document.addEventListener("keydown",e=>{
+  if(location.hash.replace(/^#/,"").split("/")[0]!=="pantalla") return;
+  if(e.target.closest&&e.target.closest("input,textarea,select")) return;
+  if(e.key==="ArrowRight") screenAction("next"); else if(e.key==="ArrowLeft") screenAction("prev");
+  else if(e.key===" "){ e.preventDefault(); screenAction("pause"); }
+});
+document.addEventListener("visibilitychange",()=>{ if(!document.hidden && SCR.timer && !SCR.wake) screenStart(); });
+
 /* ================= Router ================= */
 const NAV=[["","Inicio","home"],["ranking","Ranking","rank"],["torneos","Torneos","trophy"],["partidos","Mis partidos","ball"],["fotos","Fotos","camera"]];
 let lastHash=null;
 function render(){
   document.documentElement.dataset.surface=state.surface;
   const [route,a,b]=location.hash.replace(/^#/,"").split("/");
+  document.documentElement.dataset.screen=route==="pantalla"?"1":"";
+  if(route==="pantalla") screenStart(); else screenStop();
   const views={ranking:vRanking,torneos:vTorneos,partidos:vPartidos,fotos:vFotos,admin:vAdmin,
-    resultados:()=>vResultados(a,b),cuadro:()=>vCuadro(a,b)};
+    resultados:()=>vResultados(a,b),cuadro:()=>vCuadro(a,b),pantalla:vPantalla};
   const v=views[route]||vHome;
   try{ document.getElementById("app").innerHTML=v(); }
   catch(err){ console.error(err); document.getElementById("app").innerHTML=`<section class="wrap page"><div class="empty"><strong>No se pudo mostrar esta sección</strong>${esc(err&&err.message||err)}<br><a class="btn ghost" href="#">Volver al inicio</a></div></section>`; }
@@ -2108,7 +2453,7 @@ function render(){
   document.getElementById("swatches").innerHTML=[["polvo","Polvo de ladrillo"],["cesped","Césped"],["dura","Cancha dura"]].map(([v,l])=>
     `<button class="swatch sw-${v}" data-surface="${v}" aria-pressed="${state.surface===v}" aria-label="${l}" title="${l}"></button>`).join("");
   document.getElementById("adminbar").innerHTML=state.admin?`<div class="adminbar"><div class="wrap"><span>Modo administrador</span>
-    ${route!=="admin"?`<a href="#admin">Ir al panel</a>`:""}<button data-act="logout">Salir</button></div></div>`:"";
+    ${route!=="admin"?`<a href="#admin">Ir al panel</a>`:""}<a href="#pantalla">Modo pantalla</a><button data-act="logout">Salir</button></div></div>`:"";
   if(location.hash!==lastHash){ window.scrollTo(0,0); lastHash=location.hash; }
   if(state.q) filterRank();
 }
@@ -2139,12 +2484,18 @@ function setGenero(v){
   toast(`Mostrando ${modGenLabel().toLowerCase()}`);
 }
 document.addEventListener("click",e=>{
-  const el=e.target.closest("[data-surface],[data-mod],[data-genero],[data-cat],[data-round],[data-photo],[data-sched],[data-player],[data-act],[data-atab],[data-acat],[data-admintab],[data-ttoggle],[data-ayear],[data-atour]");
+  const el=e.target.closest("[data-surface],[data-mod],[data-genero],[data-cat],[data-round],[data-photo],[data-sched],[data-player],[data-act],[data-atab],[data-acat],[data-admintab],[data-ttoggle],[data-ayear],[data-atour],[data-share],[data-inscribir],[data-resview],[data-resround],[data-resnav],[data-scr]");
   if(!el) return;
   const ds=el.dataset;
   if(ds.surface){ setSurface(ds.surface); return; }
   if(ds.mod){ if(ds.mod!==state.mod) setMod(ds.mod); return; }
   if(ds.genero){ if(ds.genero!==state.genero) setGenero(ds.genero); return; }
+  if(ds.share){ shareAction(ds.share,ds.t,ds.c); return; }
+  if(ds.inscribir){ openInscribir(ds.inscribir); return; }
+  if(ds.resview){ syncDraft(); state.resView=ds.resview; store.set("resview",ds.resview); render(); return; }
+  if(ds.resround!=null){ syncDraft(); state.resRound=+ds.resround; state.resIdx=null; render(); return; }
+  if(ds.resnav){ syncDraft(); state.resIdx=(state.resIdx||0)+(+ds.resnav); render(); return; }
+  if(ds.scr){ screenAction(ds.scr); return; }
   if(ds.ttoggle){ state.closedTours.has(ds.ttoggle)?state.closedTours.delete(ds.ttoggle):state.closedTours.add(ds.ttoggle); render(); return; }
   if(ds.admintab){ state.adminTab=ds.admintab; if(location.hash==="#admin"){ e.preventDefault(); render(); } return; }
   if(ds.sched!=null){ openSched(); return; }
@@ -2187,8 +2538,8 @@ document.addEventListener("change",async e=>{
   const el=e.target, id=el.id;
   if(el.hasAttribute("data-yearsel")){ if(state.draft) syncDraft(); state.anio=el.value; store.set("anio",el.value); state.closedTours=null; state.round=0; render(); return; }
   if(el.hasAttribute("data-rerender")){ syncDraft(); render(); return; }
-  if(id==="resT"){ syncDraft(); state.adminRes={t:el.value,c:""}; render(); return; }
-  if(id==="resC"){ syncDraft(); state.adminRes={t:document.getElementById("resT").value,c:el.value}; render(); return; }
+  if(id==="resT"){ syncDraft(); state.adminRes={t:el.value,c:""}; state.resRound=null; state.resIdx=null; render(); return; }
+  if(id==="resC"){ syncDraft(); state.adminRes={t:document.getElementById("resT").value,c:el.value}; state.resRound=null; state.resIdx=null; render(); return; }
   if(id==="upInfoFoto"&&el.files[0]){ syncDraft(); try{ state.draft.info.foto=await downscale(el.files[0],1600); state.draft.info.modo="foto"; toast("Foto lista. Tocá Guardar para publicarla."); }catch(err){ toast("No se pudo leer la imagen"); } render(); return; }
   if(id==="upFotos"&&el.files.length){ syncDraft(); let ok=0;
     for(const f of el.files){ try{ state.draft.fotos.push({src:await downscale(f),texto:"",anio:(yearsOf(DM())[0]||String(new Date().getFullYear()))}); ok++; }catch(err){} }
@@ -2251,12 +2602,21 @@ render();
    Va al final porque necesita que state y data ya estén cargados. */
 cloudInit();
 
-(function autoEnter(){
+function autoEnterSession(){
   try{
     const sid = sessionStorage.getItem("liga_sesion")||"", i = sid.indexOf(":");
     const rol = i<0?"":sid.slice(0,i), id = i<0?"":sid.slice(i+1);
     if((rol==="admin"||rol==="jugador") && clubStore.get().some(c=>c.id===id)) enterClub(id, rol);
   }catch(e){}
+}
+(function autoEnter(){
+  if(LINK){
+    if(tryDeepLink()) return;
+    /* celular nuevo: la lista de clubes llega de la nube en unos segundos; si no aparece, se sigue normal */
+    setTimeout(()=>{ if(!linkPending) return; linkPending=false; renderGate(); toast("No encontramos el club de ese link"); autoEnterSession(); },9000);
+    return;
+  }
+  autoEnterSession();
 })();
 </script>
 </body>
