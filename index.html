@@ -650,22 +650,34 @@ function cloudWatchClubes(){
   if(!cloudOn()) return;
   if(unsubClubes) { try{ unsubClubes(); }catch(e){} }
   unsubClubes = fdb.collection("clubes").onSnapshot(snap=>{
-    const remotos = [];
+    let locales = []; try{ locales = JSON.parse(localStorage.getItem("liga_clubes")||"[]"); }catch(e){}
+    const localPorId = new Map(locales.map(c=>[c.id,c]));
+    const remotos = [], aReparar = [];
     snap.forEach(d=>{
       if(deletingClubIds.has(d.id)) return; // se esta borrando: ignorar aunque el snapshot todavia lo tenga
-      const v=d.data()||{}; remotos.push({id:d.id, nombre:v.nombre||"Club", escudo:v.escudo||"", clave:String(v.clave||"")});
+      const v=d.data()||{}, l=localPorId.get(d.id)||null;
+      /* El documento del club en la nube puede existir SIN nombre/escudo/clave (por ejemplo, lo crea
+         la subida de datos cuando la subida del club fallo, como pasa con un escudo muy pesado).
+         Antes eso pisaba los datos locales con "Club" y sin escudo. Ahora lo que falta en la nube
+         se completa con lo que ya hay en este dispositivo, y se reintenta subir el club. */
+      const club = {id:d.id,
+        nombre: v.nombre || (l&&l.nombre) || "Club",
+        escudo: ("escudo" in v) ? (v.escudo||"") : ((l&&l.escudo)||""),
+        clave: String(v.clave || (l&&l.clave) || "")};
+      remotos.push(club);
+      if(l && (l.nombre||l.escudo||l.clave) && (!v.nombre || !("escudo" in v) || !v.clave)) aReparar.push(club);
     });
     /* No pisar clubes que existen en este dispositivo pero todavia no llegaron a la nube
        (recien creados, o creados mientras la nube estaba desconectada): si los sacamos
        aca, parecen "borrados" apenas se agregan. Se mantienen localmente y se reintenta subirlos. */
     const remotoIds = new Set(remotos.map(c=>c.id));
-    let locales = []; try{ locales = JSON.parse(localStorage.getItem("liga_clubes")||"[]"); }catch(e){}
     const soloLocales = locales.filter(c=>!remotoIds.has(c.id) && !deletingClubIds.has(c.id));
     const fusion = remotos.concat(soloLocales);
     applyingCloud = true;
     try{ localStorage.setItem("liga_clubes", JSON.stringify(fusion)); }catch(e){}
     applyingCloud = false;
     if(soloLocales.length) soloLocales.forEach(c=>cloudPushClub(c)); // reintento de subida
+    aReparar.forEach(c=>cloudPushClub(c)); // completa en la nube lo que le faltaba al club
     if(document.getElementById("gateRoot").style.display !== "none") renderGate();
     if(CLUB_ID){ const c = remotos.find(x=>x.id===CLUB_ID);
       const lab = document.getElementById("clubCityLabel"); if(c && lab) lab.textContent = c.nombre; }
@@ -677,7 +689,7 @@ async function cloudPushClub(c){
   try{ setSync("sync","Subiendo...");
     await fdb.collection("clubes").doc(c.id).set({nombre:c.nombre, escudo:c.escudo||"", clave:String(c.clave||""), updatedAt:Date.now()},{merge:true});
     setSync("ok","Sincronizado");
-  }catch(e){ setSync("err","No se pudo subir el club"); }
+  }catch(e){ cloudErr=String(e&&e.message||e); setSync("err","No se pudo subir el club"); toast("No se pudo subir el club a la nube. Si el escudo es muy pesado, volvé a elegirlo."); }
 }
 async function cloudDeleteClub(id){
   if(!cloudOn()) return;
@@ -1034,11 +1046,11 @@ function renderClubAdmin(){
       if(clubAdminDraftEscudo){ const pv=document.getElementById("cfPreview"); pv.src=clubAdminDraftEscudo; pv.style.display="block"; }
     }
   }
-  document.getElementById("cfEscudo").onchange = e=>{
+  document.getElementById("cfEscudo").onchange = async e=>{
     const f=e.target.files[0]; if(!f) return;
-    const rd=new FileReader();
-    rd.onload=()=>{ clubAdminDraftEscudo=rd.result; const pv=document.getElementById("cfPreview"); pv.src=rd.result; pv.style.display="block"; };
-    rd.readAsDataURL(f);
+    try{ const url=await downscaleEscudo(f); clubAdminDraftEscudo=url;
+      const pv=document.getElementById("cfPreview"); pv.src=url; pv.style.display="block"; }
+    catch(err){ toast("No se pudo leer la imagen"); }
   };
   body.querySelectorAll("[data-editclub]").forEach(b=>b.onclick=()=>{
     clubAdminEditing = b.getAttribute("data-editclub");
@@ -1912,6 +1924,19 @@ function syncDraft(){
   const groups={};
   document.querySelectorAll("[data-tcats]").forEach(cb=>{ const i=cb.dataset.tcats; if(!groups[i]) groups[i]=[]; if(cb.checked) groups[i].push(cb.value); });
   Object.keys(groups).forEach(i=>{ const t=DM().torneos[+i]; if(t) t.cats=groups[i]; });
+}
+/* El escudo va dentro del documento del club en Firestore (limite 1 MB por documento): se achica a 256 px. */
+function downscaleEscudo(file,max=256){
+  return new Promise((res,rej)=>{ const fr=new FileReader();
+    fr.onload=()=>{ const img=new Image(); img.onload=()=>{
+      if(!img.width||!img.height){ res(fr.result); return; } // p.ej. SVG sin medidas
+      const k=Math.min(1,max/Math.max(img.width,img.height)); const cv=document.createElement("canvas");
+      cv.width=Math.max(1,Math.round(img.width*k)); cv.height=Math.max(1,Math.round(img.height*k));
+      cv.getContext("2d").drawImage(img,0,0,cv.width,cv.height);
+      let out=cv.toDataURL("image/png"); if(out.length>300000) out=cv.toDataURL("image/jpeg",.85);
+      res(out); };
+      img.onerror=rej; img.src=fr.result; };
+    fr.onerror=rej; fr.readAsDataURL(file); });
 }
 function downscale(file,max=1400){
   return new Promise((res,rej)=>{ const fr=new FileReader();
