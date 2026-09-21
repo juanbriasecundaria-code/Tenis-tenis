@@ -129,7 +129,7 @@ svg.i{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.9;stro
 .round-label{font-stretch:75%;font-weight:800;font-size:1.2rem;margin:26px 0 10px}
 .pill{display:inline-grid;place-items:center;min-width:2.5rem;height:1.75rem;padding:0 6px;border-radius:6px;font-weight:750;font-size:.9rem;font-variant-numeric:tabular-nums;font-stretch:88%}
 .p100{background:var(--gold);color:#2A1E00}.p80{background:var(--silver);color:#15201A}.p60{background:var(--bronze);color:#2A1406}
-.p40{background:var(--surface-2);box-shadow:inset 0 0 0 1px var(--line-strong)}.p20{box-shadow:inset 0 0 0 1px var(--line);color:var(--muted)}
+.p40{color:var(--text)}.p20{color:var(--muted)}
 .p10{color:var(--muted);opacity:.75}.p5{color:var(--muted);opacity:.6;font-size:.8rem}.p0{color:var(--muted);opacity:.5;font-weight:500}
 .toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));transform:translate(-50%,20px);opacity:0;z-index:60;
   background:var(--text);color:var(--bg);padding:10px 18px;border-radius:10px;font-weight:700;pointer-events:none;transition:all .25s}
@@ -377,21 +377,21 @@ svg.tchev{width:20px;height:20px;flex-shrink:0;transition:transform .18s;color:v
 .pc-main{padding:24px;display:flex;flex-direction:column;gap:6px}
 .pc-main h1{font-size:clamp(2.6rem,7vw,4.2rem)}
 .pc-main .sub{color:var(--muted);font-weight:600;font-size:1.1rem}
-.pc-id{display:flex;align-items:center;gap:16px}
-.pc-id-text{display:flex;flex-direction:column;gap:2px;min-width:0}
-.pc-photo{width:84px;height:84px;border-radius:50%;flex:none;background-size:cover;background-position:center top;
-  box-shadow:0 0 0 3px var(--surface),0 0 0 5px var(--line-strong)}
-.pc-photo-ph{display:grid;place-items:center;color:#fff;font-weight:850;font-stretch:70%;font-size:1.7rem}
-.pc-photo-edit{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
-@media (max-width:640px){.pc-photo{width:64px;height:64px;font-size:1.3rem}}
-.pc-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:auto;padding-top:16px}
-.pc-rank{position:relative;background:var(--court-in);color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;
-  min-height:190px;text-shadow:0 2px 0 rgba(0,0,0,.25),0 0 14px rgba(0,0,0,.4);transition:background-color .45s}
-.pc-rank::before{content:"";position:absolute;inset:14px;border:2px solid rgba(255,255,255,.75)}
-.pc-rank::after{content:"";position:absolute;left:14px;right:14px;top:50%;border-top:2px solid rgba(255,255,255,.4)}
-.pc-rank b{position:relative;z-index:1;font-stretch:62%;font-weight:900;font-size:5.4rem;line-height:.9}
-.pc-rank span{position:relative;z-index:1;font-weight:700;background:rgba(0,0,0,.35);padding:2px 10px;border-radius:99px;text-shadow:none;font-size:.9rem;margin-top:6px}
-@media (max-width:640px){.pcard{grid-template-columns:1fr}.pc-rank{min-height:150px}}
+.pc-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.pc-table{margin-top:auto;padding-top:18px;border-top:1px solid var(--line);display:grid;grid-template-columns:5rem repeat(3,minmax(0,1fr));gap:4px 8px}
+.pc-table-row{display:contents}
+.pc-table-row>*{padding:6px 4px}
+.pc-table-h span{color:var(--muted);font-size:.72rem;font-weight:800;text-transform:uppercase;letter-spacing:.02em}
+.pc-table-row:not(.pc-table-h) b{font-weight:800;color:var(--muted);font-size:.92rem;align-self:center}
+.pc-table-row:not(.pc-table-h) span{font-weight:850;font-stretch:80%;font-size:1.25rem;font-variant-numeric:tabular-nums;align-self:center}
+.pc-table-row.cur b,.pc-table-row.cur span{color:var(--text)}
+@media (max-width:480px){.pc-table{grid-template-columns:4rem repeat(3,minmax(0,1fr))}.pc-table-row:not(.pc-table-h) span{font-size:1.05rem}}
+.pc-media{position:relative;background:var(--court-in);background-size:cover;background-position:center top;
+  display:grid;place-items:center;aspect-ratio:3/4;min-height:320px;transition:background-color .45s}
+.pc-media[style*="url"]::before{content:"";position:absolute;inset:0;background:linear-gradient(90deg,var(--surface),transparent 32%)}
+.pc-media-ph{display:grid;place-items:center;width:100%;height:100%;color:#fff;font-weight:850;font-stretch:66%;font-size:3.4rem}
+.pc-media-edit{position:absolute;left:14px;right:14px;bottom:14px;z-index:1;display:flex;flex-wrap:wrap;gap:8px}
+@media (max-width:640px){.pcard{grid-template-columns:1fr}.pc-media{aspect-ratio:3/4;min-height:280px}}
 .stats{display:grid;grid-template-columns:repeat(4,1fr);background:var(--surface);border:1px solid var(--line);border-radius:12px;overflow:hidden;margin-top:14px}
 .stat{padding:16px 18px}.stat + .stat{border-left:1px solid var(--line)}
 .stat b{display:block;font-stretch:66%;font-weight:900;font-size:2.3rem;line-height:1;font-variant-numeric:tabular-nums}
@@ -491,8 +491,8 @@ dialog.lb::backdrop{background:rgba(5,10,8,.88)}
 
 /* ================= Portón de clubes (login) ================= */
 #gateRoot{min-height:100vh;position:relative;overflow:hidden;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 20px;text-align:center}
-.gate-bg{position:absolute;inset:0;z-index:0;pointer-events:none}
-.gate-lines{position:absolute;inset:0;width:100%;height:100%;color:var(--line-strong);opacity:.55}
+.gate-bg{position:absolute;inset:0;z-index:0;pointer-events:none;display:flex;align-items:center;justify-content:center;overflow:hidden}
+.gate-bg .court-wrap{width:min(1200px,90vh);transform:rotate(90deg);opacity:.55;box-shadow:0 30px 70px -24px rgba(0,0,0,.6)}
 .gate-wrap{position:relative;z-index:1;width:100%;max-width:560px;animation:gateIn .6s cubic-bezier(.2,.8,.2,1) both}
 @keyframes gateIn{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
 @media (prefers-reduced-motion: reduce){.gate-wrap{animation:none}}
@@ -670,18 +670,7 @@ html[data-screen="1"] .credit{display:none}
 </svg>
 
 <div id="gateRoot">
-  <div class="gate-bg" aria-hidden="true">
-    <svg class="gate-lines" viewBox="0 0 800 800" preserveAspectRatio="xMidYMid slice">
-      <g fill="none" stroke="currentColor" stroke-width="2">
-        <rect x="80" y="70" width="640" height="660"/>
-        <rect x="80" y="70" width="70" height="660"/>
-        <rect x="650" y="70" width="70" height="660"/>
-        <line x1="400" y1="70" x2="400" y2="730"/>
-        <rect x="150" y="250" width="500" height="300"/>
-        <line x1="150" y1="400" x2="650" y2="400"/>
-      </g>
-    </svg>
-  </div>
+  <div class="gate-bg" id="gateBg" aria-hidden="true"></div>
   <div class="gate-wrap">
     <div class="gate-mark" aria-hidden="true"><img src="icon-512.png" alt=""></div>
     <h1 class="display">Torneos Tenis</h1>
@@ -1353,6 +1342,9 @@ renderGate();
    mismo listener delegado que usan los del header, así que no hace falta nada más para que funcionen. */
 document.getElementById("gateSwatches").innerHTML=[["polvo","Polvo de ladrillo"],["cesped","Césped"],["dura","Cancha dura"]].map(([v,l])=>
   `<button class="swatch sw-${v}" data-surface="${v}" aria-pressed="${document.documentElement.dataset.surface===v}" aria-label="${l}" title="${l}"></button>`).join("");
+/* La cancha de fondo del portón es la misma que la de portada (courtSVG, más abajo en el archivo):
+   así usa exactamente los mismos colores y textura por superficie, sin duplicar el dibujo. */
+document.getElementById("gateBg").innerHTML=`<div class="court-wrap">${courtSVG()}</div>`;
 
 const ROUNDS = ["16avos","Octavos","Cuartos","Semifinal","Final"];
 const PTS = {100:"Campeón",80:"Final",60:"Semifinal",40:"Cuartos",20:"Octavos",10:"16avos",5:"Ronda previa"};
@@ -1589,9 +1581,9 @@ function findPlayer(name){
 }
 function playerFoto(name){ return (data.jugadores&&data.jugadores[name]&&data.jugadores[name].foto)||""; }
 function roundsOf(tid,cat){ const r=M().resultados[tid]; return (r&&r[cat])||[]; }
-function playerMatches(name){
+function playerMatches(name,allYears=false){
   const out=[];
-  M().torneos.filter(inYear).forEach(t=>tourCats(t).forEach(c=>roundsOf(t.id,c.id).forEach(r=>r.m.forEach(m=>{
+  M().torneos.filter(t=>allYears||inYear(t)).forEach(t=>tourCats(t).forEach(c=>roundsOf(t.id,c.id).forEach(r=>r.m.forEach(m=>{
     const a=m[0]===name||inTeam(m[0],name), b=m[1]===name||inTeam(m[1],name);
     if(!a&&!b) return;
     const sc=parseScore(m[2]), won=a, mine=won?m[0]:m[1];
@@ -1994,20 +1986,29 @@ function vPartidos(){
       <span class="${m.won?"res-w":"res-l"}">${m.won?"Ganó":"Perdió"}</span></div>${scoreboard(m.mine,m.opp,m.sets,m.won)}</div>`).join("")}</div>`
     : `<p class="note">El detalle partido a partido aparece cuando la organización carga los resultados.</p>`;
   const foto = playerFoto(p.name);
-  const avatarHTML = foto
-    ? `<span class="pc-photo" style="background-image:url('${esc(foto)}')"></span>`
-    : `<span class="pc-photo pc-photo-ph" style="background:${clubColor(p.name)}">${initials(s.ap)}</span>`;
-  const fotoAdmin = state.admin ? `<div class="pc-photo-edit">
+  const careerRow = ranked(p.cat,M(),true).find(x=>x.name===p.name);
+  const msCareer = playerMatches(p.name,true);
+  const wS=ms.filter(m=>m.won).length, wC=msCareer.filter(m=>m.won).length;
+  const catTorneos = M().torneos.map((t,k)=>({t,k})).filter(x=>applies(x.t,p.cat));
+  const titlesIn = list => list.filter(x=>p.pts[x.k]===100).length;
+  const tRow = (label,pos,w,l,tit,cur)=>`<div class="pc-table-row${cur?" cur":""}"><b>${label}</b><span>${pos?pos+"°":"—"}</span><span>${w||l?`${w}-${l}`:"—"}</span><span>${tit}</span></div>`;
+  const pcTable = `<div class="pc-table">
+      <div class="pc-table-row pc-table-h"><span></span><span>Posición</span><span>Partidos</span><span>Títulos</span></div>
+      ${tRow("Temporada",p.pos,wS,ms.length-wS,titlesIn(catTorneos.filter(x=>inYear(x.t))),true)}
+      ${tRow("Carrera",careerRow&&careerRow.pos,wC,msCareer.length-wC,titlesIn(catTorneos))}
+    </div>`;
+  const mediaStyle = foto ? ` style="background-image:url('${esc(foto)}')"` : "";
+  const fotoAdmin = state.admin ? `<div class="pc-media-edit">
       <label class="btn ghost sm filebtn">${foto?"Cambiar foto":"Subir foto"}<input type="file" accept="image/*" id="upJugadorFoto"></label>
-      ${foto?`<button class="btn ghost sm" data-act="rm-foto-jugador">Quitar foto</button>`:""}
+      ${foto?`<button class="btn ghost sm" data-act="rm-foto-jugador">Quitar</button>`:""}
     </div>` : "";
   return `<section class="wrap page"><div class="page-tools">${yearSel()}</div>
-    <div class="pcard"><div class="pc-main"><div class="pc-id">${avatarHTML}<div class="pc-id-text">
+    <div class="pcard"><div class="pc-main">
         <h1 class="display">${esc(s.ap)}</h1><span class="sub">${esc(s.nom)}${s.nom?", ":""}Categoría ${esc(catName(p.cat))}${modNote()}${isProfile?' <span class="me-tag">Tu perfil</span>':""}</span>
-      </div></div>${fotoAdmin}
       <div class="pc-actions">${isProfile?`<button class="btn ghost sm" data-act="unprofile">Dejar de usar como mi perfil</button>`
-        :`<button class="btn sm" data-act="profile">Guardar como mi perfil</button>`}<button class="btn ghost sm" data-act="pick">Elegir ${otroJugador()}</button></div></div>
-      <div class="pc-rank"><b>${p.pos}</b><span>de ${ranked(p.cat).length} en Cat. ${esc(catName(p.cat))}, ${p.total} puntos</span></div></div>
+        :`<button class="btn sm" data-act="profile">Guardar como mi perfil</button>`}<button class="btn ghost sm" data-act="pick">Elegir ${otroJugador()}</button></div>
+      ${pcTable}</div>
+      <div class="pc-media"${mediaStyle}>${foto?"":`<span class="pc-media-ph" style="background:${clubColor(p.name)}">${initials(s.ap)}</span>`}${fotoAdmin}</div></div>
     ${stats}<h2 class="round-label">Temporada</h2><div class="tracks">${tracks||'<p class="muted">Sin torneos todavía.</p>'}</div>${mlist}${h2hHTML(p.name)}</section>`;
 }
 function vPicker(){
@@ -2785,7 +2786,7 @@ document.addEventListener("change",async e=>{
   if(id==="upJugadorFoto"&&el.files[0]&&state.admin){
     const name=state.picking?"":(state.view||state.profile); if(!name) return;
     try{
-      const foto=await downscaleEscudo(el.files[0],320);
+      const foto=await downscale(el.files[0],1100);
       if(!data.jugadores) data.jugadores={};
       data.jugadores[name]={...(data.jugadores[name]||{}),foto};
       if(saveData()){ if(state.draft) state.draft=clone(data); toast("Foto actualizada"); } else toast("No se pudo guardar la foto");
