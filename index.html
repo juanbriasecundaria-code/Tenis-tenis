@@ -2595,15 +2595,31 @@ const CS=(bind,val,opts,attrs="")=>`<td class="cell"><select data-bind="${bind}"
 const IN=(bind,val,attrs="")=>`<input data-bind="${bind}" value="${esc(val)}" ${attrs}>`;
 const SL=(bind,val,opts,attrs="")=>`<select data-bind="${bind}" ${attrs}>${opts.map(([v,l])=>`<option value="${esc(v)}"${String(val)===String(v)?" selected":""}>${esc(l)}</option>`).join("")}</select>`;
 
+/* Rival "de turno" de un jugador según el cuadro: busca, ronda por ronda, el primer partido sin definir donde aparece.
+   Si ya perdió, es campeón, o no está en el cuadro, no encuentra nada (null) y el horario cae al modo manual. */
+function autoRival(m,tid,cid,player){
+  if(!player) return null;
+  const sd=drawOf(m,tid,cid); if(!sd) return null;
+  const dr=drawRounds(m,tid,cid,sd), key=sideKey(player);
+  for(const rd of dr.rounds){
+    for(const mt of rd.matches){
+      if(mt.win!=null) continue; // ese cruce ya se jugó; si ganó, sigue en la próxima ronda
+      const ka=mt.a?sideKey(mt.a):"", kb=mt.b?sideKey(mt.b):"";
+      if(ka===key) return {other:mt.b||"",round:rd.name};
+      if(kb===key) return {other:mt.a||"",round:rd.name};
+    }
+  }
+  return null;
+}
 /* Lado de un partido del horario: si hay inscriptos cargados para ese torneo+categoría, se elige de una lista (ya como "X vs Y");
    si no hay lista, o el jugador cargado no está en ella, se puede escribir a mano. */
-function hSide(i,side,val,participants){
+function hSide(i,side,val,participants,backLabel){
   const bind=`info.horarios.${i}.${side}`, key=`${i}-${side}`;
   const forced = val && participants.length && !participants.includes(val);
   const free = !participants.length || forced || (state.hFree&&state.hFree.has(key));
-  if(free) return `<div style="display:flex;align-items:center;gap:6px;flex:1 1 220px"><span class="cell" style="flex:1 1 auto">${IN(bind,val,'list="dlPlayers" placeholder="A definir" autocomplete="off"')}</span>
-    ${participants.length?`<button type="button" class="btn ghost sm" data-act="hfree-off" data-i="${i}" data-side="${side}">Elegir de la lista</button>`:""}</div>`;
-  return `<div style="display:flex;align-items:center;gap:6px;flex:1 1 220px"><span class="cell" style="flex:1 1 auto">${SL(bind,val,[["","A definir"],...participants.map(p=>[p,plainName(p)])])}</span>
+  if(free) return `<div style="display:flex;align-items:center;gap:6px;flex:1 1 220px"><span class="cell" style="flex:1 1 auto">${IN(bind,val,'list="dlPlayers" placeholder="A definir" autocomplete="off" data-rerender')}</span>
+    ${participants.length?`<button type="button" class="btn ghost sm" data-act="hfree-off" data-i="${i}" data-side="${side}">${backLabel||"Elegir de la lista"}</button>`:""}</div>`;
+  return `<div style="display:flex;align-items:center;gap:6px;flex:1 1 220px"><span class="cell" style="flex:1 1 auto">${SL(bind,val,[["","A definir"],...participants.map(p=>[p,plainName(p)])],'data-rerender')}</span>
     <button type="button" class="btn ghost sm" data-act="hfree-on" data-i="${i}" data-side="${side}">Escribir a mano</button></div>`;
 }
 function hRowHTML(h,i){
@@ -2616,6 +2632,13 @@ function hRowHTML(h,i){
   const cats=torneoObj?tourCats(torneoObj,m):m.categorias;
   const catSel=cats.find(c=>c.id===h.cat);
   const participants=(torneoObj&&catSel)?inscList(m,tor,catSel.id):[];
+  const sd=catSel?drawOf(m,tor,catSel.id):null;
+  const j2Key=`${i}-j2`, j2Manual=state.hFree&&state.hFree.has(j2Key);
+  const auto=(sd&&h.j1&&!j2Manual)?autoRival(m,tor,catSel.id,h.j1):null;
+  const j2HTML = auto
+    ? `<div style="display:flex;align-items:center;gap:6px;flex:1 1 220px"><span class="cell" style="flex:1 1 auto;opacity:.85" title="${esc(auto.round)}">${IN(`info.horarios.${i}.j2`,auto.other,'readonly tabindex="-1" placeholder="A definir (según el cuadro)"')}</span>
+      <button type="button" class="btn ghost sm" data-act="hfree-on" data-i="${i}" data-side="j2">Elegir manualmente</button></div>`
+    : hSide(i,"j2",h.j2||"",participants,sd?"Usar el cuadro":undefined);
   return `<div class="block" style="padding:12px;gap:8px">
     <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end">
       <label class="f" style="flex:0 0 88px">Día${IN(`info.horarios.${i}.dia`,h.dia)}</label>
@@ -2626,8 +2649,9 @@ function hRowHTML(h,i){
       <label class="f" style="flex:1 1 140px">Categoría${SL(`info.horarios.${i}.cat`,h.cat||"",[["","Sin categoría"],...cats.map(c=>[c.id,`Cat. ${c.nombre}`])],'data-rerender')}</label>
       ${IB("del-h",i,"trash","Borrar partido",'style="margin-left:auto"')}
     </div>
+    ${sd?`<p class="hint" style="margin:0">Elegí un jugador y el rival sale solo del cuadro.</p>`:""}
     <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-      ${hSide(i,"j1",h.j1||"",participants)}<span class="muted">vs</span>${hSide(i,"j2",h.j2||"",participants)}
+      ${hSide(i,"j1",h.j1||"",participants)}<span class="muted">vs</span>${j2HTML}
     </div>
   </div>`;
 }
