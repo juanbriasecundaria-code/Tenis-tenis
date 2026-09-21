@@ -492,8 +492,16 @@ dialog.lb::backdrop{background:rgba(5,10,8,.88)}
 /* ================= Portón de clubes (login) ================= */
 #gateRoot{min-height:100vh;position:relative;overflow:hidden;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 20px;text-align:center}
 .gate-bg{position:absolute;inset:0;z-index:0;pointer-events:none;display:flex;align-items:center;justify-content:center;overflow:hidden}
-.gate-bg .court-wrap{width:min(1200px,90vh);transform:rotate(90deg);opacity:.55;box-shadow:0 30px 70px -24px rgba(0,0,0,.6)}
-.gate-wrap{position:relative;z-index:1;width:100%;max-width:560px;animation:gateIn .6s cubic-bezier(.2,.8,.2,1) both}
+.gate-bg .stadium{position:absolute;left:50%;top:50%;width:min(1560px,117vh);transform:translate(-50%,-50%) rotate(90deg);opacity:.7}
+.stadium>svg{display:block;width:100%;height:auto}
+.court-n .lines *{fill:none;stroke:var(--chalk);stroke-width:9}
+/* Tribunas y vestuario según superficie: polvo al estilo París, césped de blanco estricto, cemento con tribunas azules */
+:root[data-surface="polvo"]{--stand:#1E4636;--stand-2:#163427;--kitA:#1E3F8F;--kitB:#F4F1EA;--kitB-2:#E0662A}
+:root[data-surface="cesped"]{--stand:#2B3F2A;--stand-2:#1F2E1F;--kitA:#FFFFFF;--kitB:#FAFAF7;--kitB-2:#FFFFFF}
+:root[data-surface="dura"]{--stand:#1B2F63;--stand-2:#132247;--kitA:#F2C230;--kitB:#16181D;--kitB-2:#3C86DB}
+.gate-wrap{position:relative;z-index:1;width:100%;max-width:560px;animation:gateIn .6s cubic-bezier(.2,.8,.2,1) both;
+  background:color-mix(in srgb,var(--bg) 74%,transparent);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);
+  border:1px solid var(--line);border-radius:22px;padding:34px 24px 18px;box-shadow:0 24px 60px -20px rgba(0,0,0,.55)}
 @keyframes gateIn{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
 @media (prefers-reduced-motion: reduce){.gate-wrap{animation:none}}
 .gate-mark{width:88px;height:88px;margin:0 auto 18px;position:relative;border-radius:22px;overflow:hidden;box-shadow:0 12px 28px rgba(0,0,0,.35)}
@@ -672,7 +680,7 @@ html[data-screen="1"] .credit{display:none}
 <div id="gateRoot">
   <div class="gate-bg" id="gateBg" aria-hidden="true"></div>
   <div class="gate-wrap">
-    <div class="gate-mark" aria-hidden="true"><img src="icon-512.png" alt=""></div>
+    <div class="gate-mark" aria-hidden="true"><img src="data:image/png;base64,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" alt=""></div>
     <h1 class="display">Torneos Tenis</h1>
     <p class="lede2" id="gateLede">Administradores: elegí tu club para entrar</p>
     <div class="clubs-grid" id="clubsGrid"></div>
@@ -1344,7 +1352,85 @@ document.getElementById("gateSwatches").innerHTML=[["polvo","Polvo de ladrillo"]
   `<button class="swatch sw-${v}" data-surface="${v}" aria-pressed="${document.documentElement.dataset.surface===v}" aria-label="${l}" title="${l}"></button>`).join("");
 /* La cancha de fondo del portón es la misma que la de portada (courtSVG, más abajo en el archivo):
    así usa exactamente los mismos colores y textura por superficie, sin duplicar el dibujo. */
-document.getElementById("gateBg").innerHTML=`<div class="court-wrap">${courtSVG()}</div>`;
+document.getElementById("gateBg").innerHTML=`<div class="stadium">${stadiumSVG()}</div>`;
+gateRally();
+
+/* ================= Estadio animado del portón =================
+   Vista desde arriba: tribunas con público alrededor de la misma cancha de la portada
+   y dos jugadores peloteando. El vestuario y las tribunas cambian con la superficie (variables CSS). */
+function playerSVG(id,kit,kit2,hair,skin){
+  return `<g id="${id}"><g transform="scale(1.45)">
+    <ellipse cx="6" cy="8" rx="36" ry="48" fill="#000" opacity=".22"/>
+    <ellipse cx="20" cy="-20" rx="13" ry="7" fill="#F4F4F4" stroke="rgba(0,0,0,.35)" stroke-width="2"/>
+    <ellipse cx="16" cy="22" rx="13" ry="7" fill="#F4F4F4" stroke="rgba(0,0,0,.35)" stroke-width="2"/>
+    <path d="M-2 -34 Q18 -50 30 -44" fill="none" stroke="${skin}" stroke-width="11" stroke-linecap="round"/>
+    <g class="rk">
+      <path d="M-2 34 Q22 52 40 56" fill="none" stroke="${skin}" stroke-width="11" stroke-linecap="round"/>
+      <line x1="38" y1="56" x2="70" y2="66" stroke="#1B1B1B" stroke-width="7" stroke-linecap="round"/>
+      <ellipse cx="100" cy="75" rx="32" ry="22" transform="rotate(18 100 75)" fill="rgba(255,255,255,.28)" stroke="#1B1B1B" stroke-width="7"/>
+    </g>
+    <ellipse rx="22" ry="40" style="fill:var(${kit})" stroke="rgba(0,0,0,.28)" stroke-width="3"/>
+    <path d="M-10 -38 Q0 0 -10 38" fill="none" style="stroke:var(${kit2})" stroke-width="5" opacity=".9"/>
+    <circle r="17" fill="${skin}"/>
+    <circle cx="-4" r="15.5" fill="${hair}"/>
+  </g></g>`;
+}
+function stadiumSVG(){
+  const court = courtSVG().replace('<svg class="court draw"','<svg class="court-n" x="-160" y="-130" width="2697" height="1357"');
+  const heads = ["#F2D6B3","#1D1D1D","#C9453A","#F4F4F4","#2F5FA8","#E8B04A","#7A4E33","#9FC3E6","#3C7A4A","#D98A9C"];
+  let tile=""; for(let i=0;i<12;i++){ const x=6+(i%4)*15+((i>>2)%2)*7, y=7+Math.floor(i/4)*15; tile+=`<circle cx="${x}" cy="${y}" r="5.4" fill="${heads[(i*7)%heads.length]}"/>`; }
+  let tile2=""; for(let i=0;i<9;i++){ const x=8+(i%3)*19, y=9+Math.floor(i/3)*19; tile2+=`<circle cx="${x}" cy="${y}" r="5.8" fill="${heads[(i*3+5)%heads.length]}"/>`; }
+  return `<svg id="gateStadium" viewBox="-560 -530 3497 2157" aria-hidden="true">
+    <defs>
+      <pattern id="crowdA" width="64" height="46" patternUnits="userSpaceOnUse">${tile}</pattern>
+      <pattern id="crowdB" width="57" height="57" patternUnits="userSpaceOnUse" patternTransform="translate(17 11)">${tile2}</pattern>
+      <pattern id="rows" width="3497" height="46" patternUnits="userSpaceOnUse"><rect width="3497" height="3" y="43" fill="#000" opacity=".25"/></pattern>
+    </defs>
+    <rect x="-560" y="-530" width="3497" height="2157" rx="120" style="fill:var(--stand)"/>
+    <rect x="-560" y="-530" width="3497" height="2157" rx="120" fill="url(#crowdA)" opacity=".85"/>
+    <rect x="-560" y="-530" width="3497" height="2157" rx="120" fill="url(#crowdB)" opacity=".55"/>
+    <rect x="-560" y="-530" width="3497" height="2157" rx="120" fill="url(#rows)"/>
+    <rect x="-200" y="-170" width="2777" height="1437" rx="14" style="fill:var(--stand-2)"/>
+    ${court}
+    ${playerSVG("plA","--kitA","--kitA","#3A2A1E","#D9A57C")}
+    ${playerSVG("plB","--kitB","--kitB-2","#C79A55","#E9C29F")}
+    <ellipse id="gBallSh" rx="12" ry="9" fill="#000" opacity=".3"/>
+    <circle id="gBall" r="11" fill="#DDE95B" stroke="#8C9630" stroke-width="2"/>
+  </svg>`;
+}
+function gateRally(){
+  const svg=document.getElementById("gateStadium"); if(!svg) return;
+  const A=svg.querySelector("#plA"), B=svg.querySelector("#plB"), rkA=A.querySelector(".rk"), rkB=B.querySelector(".rk");
+  const ball=svg.querySelector("#gBall"), sh=svg.querySelector("#gBallSh"), gate=document.getElementById("gateRoot");
+  const XA=-90, XB=2467, REACH=60, MID=548.5;
+  const pA={y:MID-60}, pB={y:MID+40};
+  const place=()=>{ A.setAttribute("transform",`translate(${XA} ${pA.y})`); B.setAttribute("transform",`translate(${XB} ${pB.y}) scale(-1 1)`); };
+  const setBall=(x,y,h)=>{ sh.setAttribute("cx",x); sh.setAttribute("cy",y); ball.setAttribute("cx",x-h*38); ball.setAttribute("cy",y-h*38); ball.setAttribute("r",11*(1+h*.55)); };
+  place();
+  if(matchMedia("(prefers-reduced-motion: reduce)").matches){ setBall(XA+140,pA.y+REACH,0); return; }
+  let hitter=0, from, to, t0, dur, last=performance.now();
+  const shot=now=>{ const p=hitter?pB:pA;
+    from={x:hitter?XB-110:XA+110, y:p.y+REACH};
+    to={x:hitter?XA+110:XB-110, y:Math.max(110,Math.min(1000,MID+(Math.random()-.5)*820))};
+    t0=now; dur=1150+Math.random()*450; };
+  shot(last);
+  const frame=now=>{
+    const dt=Math.min(.05,(now-last)/1000); last=now;
+    if(document.hidden||gate.style.display==="none"){ t0+=dt*1000; requestAnimationFrame(frame); return; }
+    let t=(now-t0)/dur;
+    if(t>=1){ hitter=1-hitter; shot(now); t=0; }
+    const x=from.x+(to.x-from.x)*t, y=from.y+(to.y-from.y)*t;
+    const h = t<.72 ? Math.sin(Math.PI*t/.72) : .42*Math.sin(Math.PI*(t-.72)/.28); // vuelo y un pique antes del rival
+    setBall(x,y,h);
+    const recv=hitter?pA:pB, hit=hitter?pB:pA;
+    recv.y+=((to.y-REACH)-recv.y)*Math.min(1,dt*3.4);   // corre a buscarla
+    hit.y+=(MID-hit.y)*Math.min(1,dt*1.1);              // vuelve al centro
+    const sw=(now-t0)/260, ang=sw<1?-65*Math.sin(Math.PI*sw):0;
+    (hitter?rkB:rkA).setAttribute("transform",`rotate(${ang})`); (hitter?rkA:rkB).setAttribute("transform","");
+    place(); requestAnimationFrame(frame);
+  };
+  requestAnimationFrame(frame);
+}
 
 const ROUNDS = ["16avos","Octavos","Cuartos","Semifinal","Final"];
 const PTS = {100:"Campeón",80:"Final",60:"Semifinal",40:"Cuartos",20:"Octavos",10:"16avos",5:"Ronda previa"};
