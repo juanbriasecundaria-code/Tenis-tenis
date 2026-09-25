@@ -506,10 +506,19 @@ dialog.lb::backdrop{background:rgba(5,10,8,.88)}
 /* ================= Portón de clubes (login) ================= */
 #gateRoot{min-height:100vh;position:relative;overflow:hidden;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 20px;text-align:center}
 .gate-bg{position:absolute;inset:0;z-index:0;pointer-events:none;display:flex;align-items:center;justify-content:center;overflow:hidden}
-.gate-bg .stadium{position:absolute;left:50%;top:50%;width:150vh;aspect-ratio:4377/6297;transform:translate(-50%,-50%) rotate(90deg);opacity:.8}
-.stadium>*{position:absolute;inset:0;width:100%;height:100%;display:block}
-.st-live{will-change:transform}
-.st-cw>svg{display:block;width:100%;height:100%}
+.gate-bg canvas.st3d{position:fixed;inset:0;width:100vw;height:100vh;display:block}
+.gate-watch{position:fixed;z-index:3;top:calc(14px + env(safe-area-inset-top,0px));right:14px;display:inline-flex;align-items:center;gap:8px;padding:9px 15px;border-radius:999px;
+  border:1px solid var(--line);background:color-mix(in srgb,var(--bg) 70%,transparent);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);
+  color:var(--text);font:inherit;font-weight:700;font-size:.9rem;cursor:pointer;box-shadow:0 8px 20px -8px rgba(0,0,0,.5)}
+.gate-watch[hidden]{display:none}
+.gate-watch:hover{border-color:var(--accent)}
+.gate-watch .i{width:18px;height:18px}
+.gate-venue{display:none;position:fixed;z-index:2;left:50%;bottom:calc(16px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);max-width:calc(100vw - 24px);
+  padding:8px 16px;border-radius:999px;background:rgba(10,14,24,.6);color:#fff;font-weight:800;letter-spacing:.06em;font-size:.8rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  -webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
+#gateRoot.watching .gate-wrap{display:none}
+#gateRoot.watching .gate-venue{display:block}
+@media (max-width:600px){#gateRoot{padding-top:72px}}
 .court-n .lines *{fill:none;stroke:var(--chalk);stroke-width:9}
 /* Vestuario de los jugadores según superficie: césped todo blanco */
 :root[data-surface="polvo"]{--kitA:#1E3F8F;--kitA-2:#E0662A;--shortA:#F4F1EA;--kitB:#F4F1EA;--kitB-2:#E0662A;--shortB:#1E2F58}
@@ -717,6 +726,8 @@ html[data-screen="1"] .credit{display:none}
 
 <div id="gateRoot">
   <div class="gate-bg" id="gateBg" aria-hidden="true"></div>
+  <button class="gate-watch" id="gateWatchBtn" type="button" hidden aria-pressed="false" title="Ocultar la tarjeta y ver el partido"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg><span>Ver partido</span></button>
+  <div class="gate-venue" id="gateVenue" aria-live="polite"></div>
   <div class="gate-wrap">
     <h1 class="display">Circuito Tenis</h1>
     <p class="lede2" id="gateLede">Administradores: elegí tu club para entrar</p>
@@ -784,6 +795,7 @@ html[data-screen="1"] .credit{display:none}
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 
 <script>
 /* Sincroniza superficie y tema ni bien arranca, antes de dibujar el portón (que se dibuja
@@ -1401,242 +1413,694 @@ renderGate();
    mismo listener delegado que usan los del header, así que no hace falta nada más para que funcionen. */
 document.getElementById("gateSwatches").innerHTML=[["polvo","Polvo de ladrillo"],["cesped","Césped"],["dura","Cancha dura"]].map(([v,l])=>
   `<button class="swatch sw-${v}" data-surface="${v}" aria-pressed="${document.documentElement.dataset.surface===v}" aria-label="${l}" title="${l}"></button>`).join("");
-/* La cancha de fondo del portón es la misma que la de portada (courtSVG, más abajo en el archivo):
-   así usa exactamente los mismos colores y textura por superficie, sin duplicar el dibujo. */
-
-/* ================= Estadio animado del portón =================
-   Vista cenital, en unidades de centímetros (la cancha mide 2377 x 1097).
-   Tres capas dentro de un contenedor rotado 90°:
-   1) canvas: tribunas, público y techo. Son miles de personas, así que se dibujan una sola vez por superficie.
-   2) svg: la misma cancha de la portada, más umpire, bancos, alcanzapelotas y jueces.
-   3) svg: jugadores y pelota, lo único que se mueve en cada cuadro. */
-const ST = {x:-1000, y:-2600, w:4377, h:6297};
-const ST_IN = {x0:-680, x1:3057, y0:-410, y1:1507};   // borde exterior de la pared que rodea la cancha
-const ST_RUN = {x:-640, y:-370, w:3657, h:1837};      // cancha + zona de juego alrededor
-const ST_MID = 548.5, ST_NET = 1188.5;
-const ST_SUN = [.55,.38];                              // desplazamiento de la sombra por cm de altura
-const ST_SHIRTS = ["#F2F2F2","#FFFFFF","#1F1F1F","#2F5FA8","#C8453A","#E8B04A","#3C7A4A","#8C6BB1","#D98A9C","#9FC3E6","#F4E3C1","#5A5A5A","#E0662A","#1E3F8F","#7FB3A0"];
-const ST_HAIRS = ["#2A1E16","#4A3322","#7A5230","#C79A55","#D8C8A8","#141414","#8A8A8A","#5C3A21"];
-const ST_SKINS = ["#F1C9A5","#E0AC84","#C68A62","#8D5A3B","#F5D6BC"];
-const STADIA = {
-  cesped:{shape:"oct",  bg:"#3F6E35", wall:"#0F3B25", rows:26, rowD:72, seatA:"#1D5B39", seatB:"#236841", line:"#0D2E1E", gap:14, full:.93,
-          roofFrom:.5, roof:"wimb", roofC:"#5D7146", roofSeam:"#4B5C38", roofEdge:"#93A477", hats:.2, hatC:["#F3EEDF","#E6D9B8","#FFFFFF"],
-          kid:"#4A2F6B", kid2:"#1F5B3A", judge:null},
-  polvo: {shape:"round",bg:"#8B8880", wall:"#0F4A30", rows:24, rowD:74, seatA:"#8E8E89", seatB:"#9A9A94", line:"#66665F", gap:12, full:.9,
-          roofFrom:.64, roof:"rg", roofC:"#E2E0D9", roofSeam:"#C6C3BA", roofEdge:"#FFFFFF", hats:.22, hatC:["#FFFFFF","#F2E6CC","#1D2F5A"],
-          kid:"#1E2F58", kid2:"#E3692F", judge:"#1E2F58"},
-  dura:  {shape:"square",bg:"#272C34",wall:"#13254B", rows:32, rowD:64, seatA:"#1F407C", seatB:"#25498C", line:"#112650", gap:17, full:.88,
-          roofFrom:.44, roof:"ashe", roofC:"#D3D8DE", roofSeam:"#B1B8C1", roofEdge:"#F1F3F6", hats:.2, hatC:["#1D1D1D","#FFFFFF","#C8453A","#2F5FA8"],
-          kid:"#2B57A5", kid2:"#F2F2F2", judge:null}
-};
-const stCfg = () => STADIA[document.documentElement.dataset.surface] || STADIA.polvo;
+/* ================= Estadio 3D del portón =================
+   Fondo animado en Three.js: un partido entre dos jugadores estilo animación dentro de un estadio que cambia
+   según la superficie elegida. Los estadios se inspiran en los reales y llevan su nombre en texto simple
+   (sin los logos oficiales ni marcas de patrocinadores):
+   · Polvo de ladrillo → Roland-Garros, Court Philippe-Chatrier
+   · Césped            → Wimbledon, Centre Court
+   · Cancha dura       → US Open, Arthur Ashe Stadium
+   Cámara fija con lente ultra gran angular (distorsión tipo "ojo de pez" en una pasada final).
+   Mundo en metros, origen en el centro de la cancha: X = largo, Z = ancho, Y = altura.
+   La simulación del juego (posiciones, pelota, golpes) sigue en centímetros y se convierte recién al dibujar. */
+const ST_MID = 548.5, ST_NET = 1188.5, ST_D = Math.PI/180;
+const ST_IN = {x0:-680, x1:3057, y0:-410, y1:1507};   // cm: muro que rodea la cancha
+const ST_HX = 18.685, ST_HZ = 9.585;                  // m: medio largo y medio ancho de ese muro
+const stLin = c => new THREE.Color(c).convertSRGBToLinear();
+const stCss = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
 function stRng(seed){ return ()=>{ seed=seed+0x6D2B79F5|0; let t=Math.imul(seed^seed>>>15,1|seed); t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; }; }
 
-/* Contorno de la tribuna a una distancia "o" de la pared, según la forma del estadio */
-function stRing(o,shape){
-  const x0=ST_IN.x0-o, x1=ST_IN.x1+o, y0=ST_IN.y0-o, y1=ST_IN.y1+o;
+const ST_PAL = {
+  summer:["#FFFFFF","#F4F1E8","#9FC3E6","#1E3F8F","#2F2F33","#E9D8B4","#D98A9C","#C8453A","#6FA8DC","#F2C94C","#7FB3A0","#B8B8B8","#3C7A4A","#E8E0F0","#F08A4B"],
+  wimb:  ["#FFFFFF","#FFFFFF","#F6F3EA","#E9E4D6","#BFD7EA","#1E2F58","#2F2F33","#D9C7E6","#9CC7A4","#F1D7DA","#C9C3B6","#5B4A7A","#2E6B4F"],
+  usopen:["#FFFFFF","#1E3F8F","#2F2F33","#C8453A","#F2C94C","#6FA8DC","#F4F1E8","#3C7A4A","#E0662A","#D98A9C","#8C6BB1","#9FC3E6","#151515","#B8B8B8"]
+};
+const ST_SKINS = ["#F1C9A5","#E0AC84","#C68A62","#8D5A3B","#F5D6BC","#D9A57C","#6E4630"];
+const ST_HAIRS = ["#2A1E16","#4A3322","#7A5230","#C79A55","#D8C8A8","#141414","#8A8A8A","#5C3A21","#A0522D"];
+const ST_HATS  = ["#FFFFFF","#F2E6CC","#1D2F5A","#E8D5A0","#C8453A","#2F2F33"];
+
+const VENUES = {
+  polvo:{ tour:"ROLAND-GARROS", court:"COURT PHILIPPE-CHATRIER", shape:"round",
+    sky:["#4F8FD6","#BFD8EE"], ground:"#8A6A55", sun:2.3, sunDir:[-.45,.62,-.64], hemi:.35, exposure:1.0,
+    wall:{c:0x1F4D38, h:1.25, tex:"rg"}, rim:0xD8D5CE, walk:0xB9B6AF,
+    tiers:[{gap:.3, base:1.75, rows:18, d:.85, h:.40, seat:[0x5A5F66,0x646970]},
+           {gap:1.0, lift:3.1, rows:12, d:.85, h:.52, seat:[0x5A5F66,0x646970], facade:"chatrier"}],
+    fill:.9, pal:"summer", hats:.24, roof:"chatrier", kid:[0x1E2F58,0xE3692F], ump:0x1E2F58, post:0x1F4D38 },
+  cesped:{ tour:"WIMBLEDON", court:"CENTRE COURT", shape:"oct",
+    sky:["#C9D2D6","#E9EDEE"], ground:"#4A5A48", sun:1.2, sunDir:[-.2,.95,-.25], hemi:.55, exposure:1.05,
+    wall:{c:0x0D3B28, h:1.15, tex:"wimb"}, rim:0x173B2C, walk:0x2A4A3A,
+    tiers:[{gap:.3, base:1.6, rows:17, d:.85, h:.39, seat:[0x1F7D6E,0x1C7367]},
+           {gap:1.0, lift:2.7, rows:13, d:.85, h:.50, seat:[0x1F7D6E,0x1C7367], facade:"wimb"}],
+    fill:.95, pal:"wimb", hats:.3, roof:"wimb", kid:[0x4A2F6B,0x1F5B3A], ump:0x2A3D2F, post:0x0D3B28 },
+  dura:{ tour:"US OPEN", court:"ARTHUR ASHE STADIUM", shape:"square",
+    sky:["#3F86D8","#BCD6EE"], ground:"#3D4A5E", sun:2.3, sunDir:[.35,.6,-.72], hemi:.35, exposure:1.0,
+    wall:{c:0x163D7A, h:1.2, tex:"usopen"}, rim:0x0E2447, walk:0x4A5568,
+    tiers:[{gap:.3, base:1.65, rows:18, d:.85, h:.40, seat:[0x2B5EAD,0x2757A2]},
+           {gap:.6, lift:4.6, rows:22, d:.85, h:.5, seat:[0x2E63B5,0x2A5CA8], facade:"ashe"}],
+    fill:.92, pal:"usopen", hats:.2, roof:"ashe", kid:[0x2B57A5,0xF2F2F2], ump:0x1D2F5A, post:0x163D7A }
+};
+const stKey = () => { const s=document.documentElement.dataset.surface; return VENUES[s]?s:"polvo"; };
+
+/* ---------- Geometría del bowl ---------- */
+/* Contorno de la tribuna a "o" metros del muro de la cancha, según la forma del estadio. Devuelve [x,z]. */
+function stRingM(o,shape){
+  const hx=ST_HX+o, hz=ST_HZ+o, pts=[];
   if(shape==="round"){
-    const r=40+o*.8, pts=[];
-    const corner=(cx,cy,a0)=>{ for(let k=0;k<=10;k++){ const a=a0+k*Math.PI/20; pts.push([cx+r*Math.cos(a),cy+r*Math.sin(a)]); } };
-    corner(x1-r,y0+r,-Math.PI/2); corner(x1-r,y1-r,0); corner(x0+r,y1-r,Math.PI/2); corner(x0+r,y0+r,Math.PI);
+    const r=Math.min(hz-.01, 2.5+o*.9);
+    const corner=(cx,cz,a0)=>{ for(let k=0;k<=8;k++){ const a=a0+k*Math.PI/16; pts.push([cx+r*Math.cos(a), cz+r*Math.sin(a)]); } };
+    corner(hx-r,-hz+r,-Math.PI/2); corner(hx-r,hz-r,0); corner(-hx+r,hz-r,Math.PI/2); corner(-hx+r,-hz+r,Math.PI);
     return pts;
   }
-  const c = shape==="oct" ? 40+o : 40+o*.45;
-  return [[x0+c,y0],[x1-c,y0],[x1,y0+c],[x1,y1-c],[x1-c,y1],[x0+c,y1],[x0,y1-c],[x0,y0+c]];
+  const c=Math.min(hz*.95, shape==="oct" ? 2+o*1.0 : 1.2+o*.5);
+  return [[hx-c,-hz],[hx,-hz+c],[hx,hz-c],[hx-c,hz],[-hx+c,hz],[-hx,hz-c],[-hx,-hz+c],[-hx+c,-hz]];
 }
-function stPath(g,pts){ g.moveTo(pts[0][0],pts[0][1]); for(let i=1;i<pts.length;i++) g.lineTo(pts[i][0],pts[i][1]); g.closePath(); }
-function stSample(pts,pitch,cb){
+function stWalk(pts,pitch,cb){
   for(let i=0;i<pts.length;i++){
-    const a=pts[i], b=pts[(i+1)%pts.length], dx=b[0]-a[0], dy=b[1]-a[1], L=Math.hypot(dx,dy); if(L<1) continue;
-    const ang=Math.atan2(dy,dx), n=Math.floor(L/pitch);
-    for(let k=0;k<n;k++){ const s=(k+.5)*L/n; cb(a[0]+dx*s/L, a[1]+dy*s/L, ang, s, L, Math.abs(dy)<1?"h":Math.abs(dx)<1?"v":"d"); }
+    const [ax,az]=pts[i], [bx,bz]=pts[(i+1)%pts.length], L=Math.hypot(bx-ax,bz-az); if(L<.01) continue;
+    const n=Math.max(1,Math.round(L/pitch));
+    for(let k=0;k<n;k++){ const s=(k+.5)/n; cb(ax+(bx-ax)*s, az+(bz-az)*s, (bz-az)/L, -(bx-ax)/L); }
   }
 }
-function stEll(g,x,y,rx,ry,c){ g.fillStyle=c; g.beginPath(); g.ellipse(x,y,rx,ry,0,0,6.2832); g.fill(); }
+/* Anillo sólido entre los contornos oIn y oOut, de y0 a y1 */
+function stBand(oIn,oOut,y0,y1,shape,mat){
+  const s=new THREE.Shape(stRingM(oOut,shape).map(([x,z])=>new THREE.Vector2(x,-z)));
+  s.holes.push(new THREE.Path(stRingM(oIn,shape).map(([x,z])=>new THREE.Vector2(x,-z))));
+  mat.side=THREE.DoubleSide;   // la forma se arma espejada en Z: sin esto las caras de arriba de los escalones no se ven
+  const m=new THREE.Mesh(new THREE.ExtrudeGeometry(s,{depth:Math.max(.02,y1-y0),bevelEnabled:false}),mat);
+  m.rotation.x=-Math.PI/2; m.position.y=y0; m.receiveShadow=true; return m;
+}
+/* Pared vertical con textura que recorre un contorno (frente de palcos, muro de la cancha) */
+function stFacade(o,y0,y1,shape,tex,tile){
+  const pts=stRingM(o,shape), pos=[], uv=[]; let u=0;
+  for(let i=0;i<pts.length;i++){
+    const [ax,az]=pts[i], [bx,bz]=pts[(i+1)%pts.length], L=Math.hypot(bx-ax,bz-az); if(L<.01) continue;
+    const u1=u+L/(tile||10);
+    pos.push(ax,y0,az, bx,y0,bz, bx,y1,bz, ax,y0,az, bx,y1,bz, ax,y1,az);
+    uv.push(u,0, u1,0, u1,1, u,0, u1,1, u,1); u=u1;
+  }
+  const g=new THREE.BufferGeometry();
+  g.setAttribute("position",new THREE.Float32BufferAttribute(pos,3)); g.setAttribute("uv",new THREE.Float32BufferAttribute(uv,2)); g.computeVertexNormals();
+  const m=new THREE.Mesh(g,new THREE.MeshStandardMaterial({map:tex,roughness:.8,side:THREE.DoubleSide})); m.receiveShadow=true; return m;
+}
+/* Muchas vigas en una sola llamada de dibujo: lista de [ax,ay,az,bx,by,bz,grosor] */
+function stMembers(list,color){
+  const n=list.length/7, im=new THREE.InstancedMesh(new THREE.BoxGeometry(1,1,1),new THREE.MeshStandardMaterial({color:stLin(color),roughness:.45,metalness:.35}),n);
+  const a=new THREE.Vector3(), b=new THREE.Vector3(), d=new THREE.Vector3(), q=new THREE.Quaternion(), s=new THREE.Vector3(), m=new THREE.Matrix4(), up=new THREE.Vector3(0,1,0);
+  for(let i=0;i<n;i++){
+    const k=i*7; a.set(list[k],list[k+1],list[k+2]); b.set(list[k+3],list[k+4],list[k+5]);
+    d.subVectors(b,a); const L=d.length(); q.setFromUnitVectors(up,d.divideScalar(L||1));
+    s.set(list[k+6],L,list[k+6]); m.compose(a.clone().add(b).multiplyScalar(.5),q,s); im.setMatrixAt(i,m);
+  }
+  im.frustumCulled=false; im.castShadow=true; return im;
+}
 
-/* Capa 1: tribunas, público y techo */
-function stDrawBowl(cv){
-  const cfg=stCfg(), cssW=Math.round(innerHeight*1.5), dpr=Math.min(1.5,devicePixelRatio||1);
-  cv.width=Math.round(cssW*dpr); cv.height=Math.round(cssW*ST.h/ST.w*dpr);
-  const g=cv.getContext("2d"), s=cv.width/ST.w, R=stRng(11);
-  g.setTransform(s,0,0,s,-ST.x*s,-ST.y*s);
-  g.fillStyle=cfg.bg; g.fillRect(ST.x,ST.y,ST.w,ST.h);
-  const total=cfg.rows*cfg.rowD, roofO=total*cfg.roofFrom, outO=total+140;
-  g.beginPath(); stPath(g,stRing(0,cfg.shape)); g.fillStyle=cfg.wall; g.fill();  // pared al borde de la cancha
-  for(let r=0;r<cfg.rows;r++){
-    const o0=r*cfg.rowD, o1=o0+cfg.rowD;
-    g.beginPath(); stPath(g,stRing(o1,cfg.shape)); stPath(g,stRing(o0,cfg.shape));
-    g.fillStyle = r===cfg.gap ? cfg.line : (r%2?cfg.seatA:cfg.seatB); g.fill("evenodd");
-    g.beginPath(); stPath(g,stRing(o1,cfg.shape)); g.strokeStyle=cfg.line; g.lineWidth=4; g.stroke();
-    if(r===cfg.gap || o0>roofO+cfg.rowD) continue;   // pasillo anular, o filas tapadas por el techo
-    stSample(stRing(o0+cfg.rowD*.55,cfg.shape),50,(x,y,ang,sa,L,kind)=>{
-      if(kind==="h" && ((x-ST_NET)%600+600)%600<64) return;           // pasillos radiales
-      if(kind==="v" && ((y-ST_MID)%500+500)%500<64) return;
-      if(kind==="d" && Math.abs(sa-L/2)<40) return;
-      g.save(); g.translate(x,y); g.rotate(ang); g.translate((r%2?25:0)+(R()-.5)*9,(R()-.5)*5);
-      if(R()<cfg.full){
-        const lean=(R()-.5)*4, hat=R()<cfg.hats;
-        stEll(g,2,3,16,10,"rgba(0,0,0,.25)");
-        stEll(g,lean,-2,15,9.5,ST_SHIRTS[R()*ST_SHIRTS.length|0]);
-        stEll(g,lean,2,7.2,7.2,ST_SKINS[R()*ST_SKINS.length|0]);
-        if(hat) stEll(g,lean,.5,9.2,9.2,cfg.hatC[R()*cfg.hatC.length|0]);
-        else stEll(g,lean,-.8,6.6,6.6,ST_HAIRS[R()*ST_HAIRS.length|0]);
-      } else { g.fillStyle="rgba(255,255,255,.13)"; g.fillRect(-10,-5,20,11); }
+/* ---------- Texturas pintadas en canvas ---------- */
+function stCanvasTex(w,h,paint,repeat,linear){
+  const c=document.createElement("canvas"); c.width=w; c.height=h; paint(c.getContext("2d"),w,h);
+  const t=new THREE.CanvasTexture(c); if(!linear) t.encoding=THREE.sRGBEncoding; t.anisotropy=8;
+  if(repeat){ t.wrapS=THREE.RepeatWrapping; t.wrapT=THREE.RepeatWrapping; }
+  return t;
+}
+const stFont=(w,px)=>`${w} ${px}px "Arial Black",Arial,Helvetica,sans-serif`;
+function stTex(kind,V){
+  if(["rg","wimb","usopen"].includes(kind)) return stCanvasTex(1024,88,(g,W,H)=>{   // muro de la cancha: 14 m con el nombre del torneo
+    const bg={rg:["#1F4D38","#1A4331"],wimb:["#0D3B28","#0A3121"],usopen:["#1C4C95","#0F2C5C"]}[kind];
+    const gr=g.createLinearGradient(0,0,0,H); gr.addColorStop(0,bg[0]); gr.addColorStop(1,bg[1]); g.fillStyle=gr; g.fillRect(0,0,W,H);
+    for(let x=0;x<W;x+=128){ g.fillStyle="rgba(0,0,0,.18)"; g.fillRect(x,0,2,H); }
+    g.fillStyle=kind==="usopen"?"#3D8BF0":"#E9E4DA"; g.fillRect(0,0,W,kind==="usopen"?5:3);
+    g.fillStyle=kind==="wimb"?"#E4DCC4":"#F4F2EC"; g.font=stFont(900,62); g.textAlign="center"; g.textBaseline="middle";
+    g.fillText(V.tour,W/2,H/2+4);
+  },true);
+  return stCanvasTex(512,128,(g,W,H)=>{
+    const R=stRng(kind.length*97);
+    const glass=(y0,y1,base)=>{ g.fillStyle=base; g.fillRect(0,y0,W,y1-y0);
+      for(let x=0;x<W;x+=32){ g.fillStyle="rgba(255,255,255,.08)"; g.fillRect(x,y0,2,y1-y0); }
+      for(let x=4;x<W;x+=32) if(R()<.55){ g.fillStyle=`rgba(255,${200+R()*40|0},150,${.18+R()*.3})`; g.fillRect(x,y0+(y1-y0)*.25,26,(y1-y0)*.6); } };
+    if(kind==="chatrier"){ g.fillStyle="#E4E2DC"; g.fillRect(0,0,W,H); glass(26,98,"#2A3137"); g.fillStyle="#1F4D38"; g.fillRect(0,H-10,W,4); }
+    else if(kind==="wimb-f"){ g.fillStyle="#123D2C"; g.fillRect(0,0,W,H); for(let x=0;x<W;x+=64){ g.fillStyle="#0E3324"; g.fillRect(x,0,3,H); }
+      g.fillStyle="#D9D2BE"; g.fillRect(0,10,W,3); g.fillRect(0,H-14,W,3); glass(40,82,"#0F2A20"); }
+    else if(kind==="ashe"){ g.fillStyle="#0E2447"; g.fillRect(0,0,W,H); glass(14,56,"#1B2230"); glass(66,108,"#1B2230");
+      g.fillStyle="#3D8BF0"; g.fillRect(0,0,W,7); g.fillRect(0,58,W,5); g.fillStyle="#8A4636"; g.fillRect(0,H-14,W,14); }
+  },true);
+}
+/* Superficie de la cancha: color + relieve (bump), con grano, marcas y desgaste según la superficie */
+function stCourtTex(key){
+  const PAD=.3, W=2048, ppm=W/(2*ST_HX+2*PAD), H=Math.round((2*ST_HZ+2*PAD)*ppm);
+  const X=x=>(x+ST_HX+PAD)*ppm, Z=z=>(z+ST_HZ+PAD)*ppm;
+  const cin=stCss("--court-in")||"#C0582B", cout=stCss("--court-out")||"#AE4D24";
+  const lines=(g,col,w)=>{ g.strokeStyle=col; g.lineWidth=w; g.lineCap="butt";
+    const L=(x0,z0,x1,z1)=>{ g.beginPath(); g.moveTo(X(x0),Z(z0)); g.lineTo(X(x1),Z(z1)); g.stroke(); };
+    for(const s of [-1,1]){ L(s*11.885,-5.485,s*11.885,5.485); L(-11.885,s*5.485,11.885,s*5.485); L(-11.885,s*4.115,11.885,s*4.115);
+      L(s*6.4,-4.115,s*6.4,4.115); L(s*11.885,0,s*(11.885-.1),0); }
+    L(-6.4,0,6.4,0); };
+  const blob=(g,x,y,rx,ry,col,rot)=>{ g.fillStyle=col; g.beginPath(); g.ellipse(x,y,rx,ry,rot||0,0,6.3); g.fill(); };
+  const lw=Math.max(3,.05*ppm*1.3);
+  const map=stCanvasTex(W,H,(g)=>{
+    const R=stRng(5);
+    if(key==="dura"){
+      g.fillStyle=cout; g.fillRect(0,0,W,H);
+      g.fillStyle=cin; g.fillRect(X(-11.885),Z(-5.485),23.77*ppm,10.97*ppm);
+      for(let i=0;i<90000;i++){ g.fillStyle=R()<.5?"rgba(255,255,255,.05)":"rgba(0,0,0,.05)"; g.fillRect(R()*W,R()*H,1.5,1.5); }
+      for(const s of [-1,1]) for(let i=0;i<40;i++) blob(g,X(s*(12.2+R()*1.5)),Z((R()-.5)*6),6+R()*20,3+R()*6,"rgba(0,0,0,.05)",R()*3);   // marcas de goma
+      lines(g,"#F8F8F4",lw);
+    } else if(key==="cesped"){
+      g.fillStyle=cin; g.fillRect(0,0,W,H);
+      for(let i=0,x=-ST_HX-PAD;x<ST_HX+PAD;i++,x+=1.25){ g.fillStyle=i%2?"rgba(255,255,255,.05)":"rgba(0,0,0,.035)"; g.fillRect(X(x),0,1.25*ppm+1,H); }
+      for(let i=0;i<120000;i++){ const x=R()*W, y=R()*H; g.fillStyle=R()<.5?"rgba(190,230,140,.10)":"rgba(10,40,10,.12)"; g.fillRect(x,y,1,2+R()*2); }
+      const wear=(x,z,rx,rz,n)=>{ for(let i=0;i<n;i++){ const a=R()*6.3, r=Math.sqrt(R()); blob(g,X(x+Math.cos(a)*r*rx),Z(z+Math.sin(a)*r*rz),3+R()*9,2+R()*6,`rgba(${128+R()*25|0},${118+R()*20|0},${70+R()*18|0},${(.1+R()*.2)*(1-r*.6)})`,R()*3); } };
+      for(const s of [-1,1]){ wear(s*12.2,0,2.4,2.4,900); wear(s*11.9,1.9,.9,.9,160); wear(s*11.9,-1.9,.9,.9,160); wear(s*9.8,0,1.6,1.3,160); wear(s*6.6,0,.8,.8,60); }
+      lines(g,"#FAFAF6",lw);
+    } else {
+      g.fillStyle=cin; g.fillRect(0,0,W,H);
+      for(let i=0;i<300;i++) blob(g,R()*W,R()*H,20+R()*90,8+R()*30,R()<.5?"rgba(120,45,15,.045)":"rgba(255,210,170,.04)",R()*3);
+      for(let i=0;i<140000;i++){ g.fillStyle=R()<.5?"rgba(255,225,190,.07)":"rgba(90,30,10,.08)"; g.fillRect(R()*W,R()*H,1.5,1.5); }
+      g.lineCap="round";
+      for(const s of [-1,1]) for(let i=0;i<45;i++){   // marcas de deslizamiento cerca del fondo
+        const x=X(s*(10+R()*3.5)), y=Z((R()-.5)*9), L=(1+R()*2.2)*ppm, a=(R()-.5)*1.2+(R()<.5?0:Math.PI/2);
+        g.strokeStyle=R()<.5?"rgba(90,30,10,.16)":"rgba(255,215,180,.14)"; g.lineWidth=6+R()*8;
+        g.beginPath(); g.moveTo(x,y); g.quadraticCurveTo(x+Math.cos(a)*L*.5+10,y+Math.sin(a)*L*.5,x+Math.cos(a)*L,y+Math.sin(a)*L); g.stroke(); }
+      lines(g,"#EFE8DD",lw);
+      for(let i=0;i<9000;i++){ g.fillStyle="rgba(190,90,45,.35)"; g.fillRect(R()*W,R()*H,2,2); }   // polvo de ladrillo sobre las líneas
+    }
+  });
+  const bump=stCanvasTex(1024,Math.round(H/2),(g,w,h)=>{
+    const R=stRng(9); g.fillStyle="#808080"; g.fillRect(0,0,w,h);
+    const n=key==="dura"?60000:key==="cesped"?140000:110000;
+    for(let i=0;i<n;i++){ const v=R()<.5?255:0; g.fillStyle=`rgba(${v},${v},${v},${key==="dura"?.12:.22})`; g.fillRect(R()*w,R()*h,1,key==="cesped"?2:1); }
+  },false,true);
+  return {map,bump};
+}
+
+/* ---------- Público: personas dibujadas en un atlas, una tarjeta por espectador ---------- */
+function stCrowdAtlas(V){
+  return stCanvasTex(1024,512,(g)=>{
+    const R=stRng(V.tour.length*53+3), pal=ST_PAL[V.pal];
+    const pick=a=>a[R()*a.length|0];
+    for(let row=0;row<8;row++) for(let col=0;col<16;col++){
+      const x0=col*64, y0=row*64, cx=x0+32, back=row>=6, shirt=pick(pal), skin=pick(ST_SKINS), hair=pick(ST_HAIRS), pose=R();
+      g.save(); g.beginPath(); g.rect(x0,y0,64,64); g.clip();
+      // torso con sombreado
+      const tg=g.createLinearGradient(cx-22,0,cx+22,0); tg.addColorStop(0,shirt); tg.addColorStop(1,"#000");
+      g.fillStyle=shirt; g.beginPath(); g.moveTo(cx-21,y0+64); g.lineTo(cx-19,y0+45); g.quadraticCurveTo(cx,y0+34,cx+19,y0+45); g.lineTo(cx+21,y0+64); g.fill();
+      g.globalAlpha=.22; g.fillStyle=tg; g.fill(); g.globalAlpha=1;
+      // brazos
+      g.fillStyle=skin;
+      if(!back&&pose<.28){ g.beginPath(); g.arc(cx-5,y0+50,4.5,0,6.3); g.arc(cx+5,y0+49,4.5,0,6.3); g.fill(); }           // aplaudiendo
+      else if(!back&&pose<.36){ g.fillStyle=shirt; g.fillRect(cx+15,y0+22,7,22); g.fillStyle=skin; g.beginPath(); g.arc(cx+18.5,y0+20,4.5,0,6.3); g.fill(); } // mano arriba
+      // cuello y cabeza
+      g.fillStyle=skin; g.fillRect(cx-4,y0+32,8,7);
+      const hg=g.createRadialGradient(cx-4,y0+20,2,cx,y0+24,14); hg.addColorStop(0,skin); hg.addColorStop(1,"#00000000");
+      g.fillStyle=skin; g.beginPath(); g.ellipse(cx,y0+24,10.5,12.5,0,0,6.3); g.fill();
+      g.fillStyle="rgba(0,0,0,.12)"; g.beginPath(); g.ellipse(cx+4,y0+26,6,10,0,0,6.3); g.fill();
+      // pelo
+      g.fillStyle=hair; const hs=R();
+      if(back){ g.beginPath(); g.ellipse(cx,y0+23,11,13,0,0,6.3); g.fill(); if(hs<.35){ g.fillRect(cx-10,y0+24,20,14); } }
+      else if(hs<.12){ /* pelado */ }
+      else if(hs<.45){ g.beginPath(); g.ellipse(cx,y0+17,11,7,0,Math.PI,0); g.fill(); g.fillRect(cx-11,y0+16,3,8); g.fillRect(cx+8,y0+16,3,8); }
+      else if(hs<.75){ g.beginPath(); g.ellipse(cx,y0+18,12,9,0,Math.PI,0); g.fill(); g.fillRect(cx-12,y0+17,5,20); g.fillRect(cx+7,y0+17,5,20); }
+      else { g.beginPath(); g.ellipse(cx,y0+17,11.5,8,0,Math.PI,0); g.fill(); g.beginPath(); g.ellipse(cx-4,y0+15,6,4,-.4,0,6.3); g.fill(); }
+      // cara
+      if(!back){ g.fillStyle="#241a14"; g.fillRect(cx-5,y0+23,2.5,2.5); g.fillRect(cx+3,y0+23,2.5,2.5);
+        if(R()<.22){ g.fillStyle="#141414"; g.fillRect(cx-8,y0+21.5,16,4.5); }
+        g.fillStyle="rgba(120,40,40,.55)"; g.fillRect(cx-3,y0+30,6,1.5); }
+      // gorra o sombrero
+      if(R()<V.hats){ g.fillStyle=pick(ST_HATS); g.beginPath(); g.ellipse(cx,y0+15,12,7,0,Math.PI,0); g.fill();
+        if(!back) g.fillRect(cx-13,y0+14,26,3); else g.fillRect(cx-12,y0+13,24,3); }
       g.restore();
-    });
+    }
+  });
+}
+const stU={uTime:{value:0},uClap:{value:0}};
+function stBuildCrowd(grp,V,tiers,low,holes){
+  const R=stRng(V.shape.length*131+7), pitch=low?.72:.55, P=[];
+  tiers.forEach((T,ti)=>{ const aisles=ti?44:34;
+    for(let r=0;r<T.rows;r++){ const o=T.o0+(r+.6)*T.d, y=T.base+r*T.h;
+      stWalk(stRingM(o,V.shape),pitch,(x,z,nx,nz)=>{
+        const f=((Math.atan2(z/(ST_HZ+o),x/(ST_HX+o))/(2*Math.PI)+1)*aisles)%1; if(f<.055) return;
+        if(R()>V.fill) return;
+        for(const h of holes) if(Math.abs(x-h.x)<2.8&&Math.abs(z-h.z)<2.8&&y>h.y-4.5&&y<h.y+1) return;
+        P.push({x,y,z,nx,nz,front:R()*96|0,backT:96+(R()*32|0),ph:R()});
+      });
+    }});
+  const n=P.length, geo=new THREE.PlaneGeometry(.66,.66).translate(0,.67,0);
+  const nrm=geo.attributes.normal; for(let i=0;i<nrm.count;i++) nrm.setXYZ(i,0,1,0);   // se iluminan como superficie horizontal: reciben bien la sombra del techo
+  const tile=new Float32Array(n*2), ph=new Float32Array(n);
+  P.forEach((p,i)=>{ ph[i]=p.ph; });
+  geo.setAttribute("aTile",new THREE.InstancedBufferAttribute(tile,2)); geo.setAttribute("aPhase",new THREE.InstancedBufferAttribute(ph,1));
+  const mat=new THREE.MeshLambertMaterial({map:stCrowdAtlas(V),alphaTest:.5,side:THREE.DoubleSide});
+  mat.onBeforeCompile=sh=>{ sh.uniforms.uTime=stU.uTime; sh.uniforms.uClap=stU.uClap;
+    sh.vertexShader="uniform float uTime;\nuniform float uClap;\nattribute float aPhase;\nattribute vec2 aTile;\n"+sh.vertexShader
+      .replace("#include <uv_vertex>","#include <uv_vertex>\n vUv = vUv*vec2(0.0625,0.125)+aTile;")
+      .replace("#include <begin_vertex>","#include <begin_vertex>\n transformed.y += uClap*max(0.0,sin(uTime*13.0+aPhase*50.0))*0.09*step(0.3,aPhase) + 0.01*sin(uTime*1.7+aPhase*30.0);"); };
+  const im=new THREE.InstancedMesh(geo,mat,n); im.frustumCulled=false; im.receiveShadow=true; grp.add(im);
+  // orientar cada tarjeta hacia la cámara y elegir frente o espalda según de qué lado se la ve
+  const m=new THREE.Matrix4(), q=new THREE.Quaternion(), s=new THREE.Vector3(1,1,1), v=new THREE.Vector3(), up=new THREE.Vector3(0,1,0);
+  return cam=>{
+    P.forEach((p,i)=>{ const dx=cam.x-p.x, dz=cam.z-p.z; q.setFromAxisAngle(up,Math.atan2(dx,dz)); v.set(p.x,p.y,p.z); m.compose(v,q,s); im.setMatrixAt(i,m);
+      const t=(dx*p.nx+dz*p.nz)<0?p.front:p.backT; tile[i*2]=(t%16)/16; tile[i*2+1]=1-((t/16|0)+1)/8; });
+    im.instanceMatrix.needsUpdate=true; geo.attributes.aTile.needsUpdate=true;
+  };
+}
+
+/* ---------- Personas (jugadores, alcanzapelotas, umpire) ----------
+   Cuerpo local: +X adelante, +Z derecha, +Y arriba. Rodillas por cinemática inversa de dos huesos. */
+function stCyl(r1,r2,L,seg,down){ const g=new THREE.CylinderGeometry(r1,r2,L,seg||8); g.translate(0,down?-L/2:L/2,0); return g; }
+let ST_STRINGS=null;
+function stPerson(o){
+  const std=(c,r,x)=>new THREE.MeshStandardMaterial(Object.assign({color:stLin(c),roughness:r},x||{}));
+  const M={skin:std(o.skin,.55), shirt:std(o.shirt,.85), trim:std(o.trim,.8), shorts:std(o.shorts,.85), hair:std(o.hair,.7),
+    white:std(0xF6F6F2,.8), dark:std(0x17120F,.3), shoe:std(o.shoe||0xF4F4F0,.55), sole:std(0xCFCFC8,.8), eye:std(0xFFFFFF,.25),
+    iris:std(o.iris||0x5A3A22,.3), mouth:std(0x8A3B35,.6), cheek:std(0xE98F80,.8,{transparent:true,opacity:.3,depthWrite:false})};
+  const root=new THREE.Group(), body=new THREE.Group(); body.scale.setScalar(o.scale||1); root.add(body);
+  const add=(p,geo,m,x,y,z)=>{ const me=new THREE.Mesh(geo,m); me.position.set(x||0,y||0,z||0); p.add(me); return me; };
+  const hips=new THREE.Group(); body.add(hips);
+  add(hips,new THREE.CylinderGeometry(.165,.19,.3,16),M.shorts,0,-.02,0);
+  const spine=new THREE.Group(); spine.position.y=.1; hips.add(spine);
+  add(spine,new THREE.SphereGeometry(.18,20,16),M.shirt,0,.22,0).scale.set(.86,1.3,1.13);
+  add(spine,new THREE.TorusGeometry(.07,.022,8,18),M.trim,0,.445,0).rotation.x=Math.PI/2;
+  add(spine,new THREE.BoxGeometry(.012,.2,.06),M.trim,.155,.3,0);
+  add(spine,new THREE.CylinderGeometry(.055,.062,.14,12),M.skin,0,.5,0);
+  const head=new THREE.Group(); head.position.y=.73; spine.add(head);
+  add(head,new THREE.SphereGeometry(.23,28,22),M.skin);
+  const hl=new THREE.MeshBasicMaterial({color:0xffffff});
+  for(const s of [-1,1]){
+    add(head,new THREE.SphereGeometry(.055,14,12),M.eye,.178,.03,.085*s).scale.set(.5,1.1,1);
+    add(head,new THREE.SphereGeometry(.034,12,10),M.iris,.203,.028,.085*s).scale.set(.45,1,1);
+    add(head,new THREE.SphereGeometry(.019,10,8),M.dark,.215,.028,.085*s).scale.set(.5,1,1);
+    add(head,new THREE.SphereGeometry(.009,8,6),hl,.222,.043,.074*s);
+    add(head,new THREE.BoxGeometry(.02,.022,.085),M.hair,.2,.112,.085*s).rotation.x=.18*s;
+    add(head,new THREE.SphereGeometry(.05,12,10),M.skin,0,0,.225*s);
+    add(head,new THREE.SphereGeometry(.04,10,8),M.cheek,.185,-.045,.125*s).scale.set(.4,.7,1);
   }
-  const rin=stRing(roofO,cfg.shape), rout=stRing(outO,cfg.shape);
-  g.save(); g.translate(60,85); g.beginPath(); stPath(g,rout); stPath(g,rin); g.fillStyle="rgba(0,0,0,.34)"; g.fill("evenodd"); g.restore(); // sombra del techo
-  g.beginPath(); stPath(g,rout); stPath(g,rin); g.fillStyle=cfg.roofC; g.fill("evenodd");
-  g.strokeStyle=cfg.roofSeam; g.lineWidth=4;
-  for(let o=roofO+110;o<outO;o+=110){ g.beginPath(); stPath(g,stRing(o,cfg.shape)); g.stroke(); }
-  for(let i=0;i<rin.length;i+=cfg.shape==="round"?5:1){ g.beginPath(); g.moveTo(rin[i][0],rin[i][1]); g.lineTo(rout[i][0],rout[i][1]); g.stroke(); }
-  stSample(rin,260,(x,y,ang)=>{ g.beginPath(); g.moveTo(x,y); g.lineTo(x+Math.sin(ang)*(outO-roofO),y-Math.cos(ang)*(outO-roofO)); g.stroke(); });
-  g.strokeStyle=cfg.roofEdge; g.lineWidth=12; g.beginPath(); stPath(g,rin); g.stroke();
-  const yT=ST_IN.y0-roofO, yB=ST_IN.y1+roofO;
-  if(cfg.roof==="wimb"){   // techo retráctil plegado sobre un lateral
-    const x0=260, x1=2117, y0=yT-300, y1=yT+70;
-    g.fillStyle="rgba(0,0,0,.3)"; g.fillRect(x0+45,y0+65,x1-x0,y1-y0);
-    g.fillStyle="#F2F3EF"; g.fillRect(x0,y0,x1-x0,y1-y0);
-    g.strokeStyle="#C7CAC2"; g.lineWidth=5; for(let x=x0+24;x<x1;x+=48){ g.beginPath(); g.moveTo(x,y0); g.lineTo(x,y1); g.stroke(); }
-    g.strokeStyle="#A9AEA3"; g.lineWidth=7; g.strokeRect(x0,y0,x1-x0,y1-y0);
-  } else if(cfg.roof==="rg"){   // vigas blancas en voladizo
-    const beam=(xa,ya,xb,yb)=>{ g.strokeStyle="rgba(0,0,0,.3)"; g.lineWidth=24; g.beginPath(); g.moveTo(xa+35,ya+50); g.lineTo(xb+35,yb+50); g.stroke();
-      g.strokeStyle="#FFFFFF"; g.lineWidth=22; g.beginPath(); g.moveTo(xa,ya); g.lineTo(xb,yb); g.stroke(); };
-    for(let k=0;k<=12;k++){ const x=-200+k*(2777/12); beam(x,ST_IN.y0-outO,x,yT+260); beam(x,ST_IN.y1+outO,x,yB-260); }
-    for(let k=0;k<=4;k++){ const y=137+k*(823/4); beam(ST_IN.x0-outO,y,ST_IN.x0-roofO+220,y); beam(ST_IN.x1+outO,y,ST_IN.x1+roofO-220,y); }
-  } else {   // estructura del techo del bowl cuadrado
-    g.strokeStyle=cfg.roofSeam; g.lineWidth=16; g.beginPath(); stPath(g,stRing(roofO+70,cfg.shape)); g.stroke();
-    g.lineWidth=26; for(let i=0;i<rin.length;i++){ g.beginPath(); g.moveTo(rin[i][0],rin[i][1]); g.lineTo(rout[i][0],rout[i][1]); g.stroke(); }
+  add(head,new THREE.SphereGeometry(.032,12,10),M.skin,.228,-.035,0);
+  const mo=add(head,new THREE.TorusGeometry(.035,.008,6,12,Math.PI),M.mouth,.212,-.085,0); mo.rotation.set(0,Math.PI/2,Math.PI);
+  add(head,new THREE.SphereGeometry(.245,26,16,0,Math.PI*2,0,Math.PI*.55),M.hair,-.02,.015,0).rotation.z=.45;
+  if(o.cap){
+    add(head,new THREE.SphereGeometry(.252,26,14,0,Math.PI*2,0,Math.PI*.5),M.trim,-.005,.03,0).rotation.z=.22;
+    add(head,new THREE.BoxGeometry(.2,.022,.25),M.trim,.25,.105,0).rotation.z=-.18;
+  } else {
+    for(let i=0;i<6;i++){ const z=-.12+i*.048; add(head,new THREE.SphereGeometry(.068,10,8),M.hair,.14-Math.abs(z)*.35,.15-Math.abs(z)*.2,z).scale.set(1,.8,1); }
   }
+  const arm=s=>{
+    const sh=new THREE.Group(); sh.position.set(0,.39,.2*s); spine.add(sh);
+    add(sh,new THREE.SphereGeometry(.088,14,12),M.shirt);
+    const a=new THREE.Group(); sh.add(a);
+    add(a,stCyl(.08,.07,.15,12,true),M.shirt);
+    add(a,stCyl(.05,.045,.3,10,true),M.skin);
+    add(a,stCyl(.045,.04,.27,10,true),M.skin,0,-.3,0);
+    add(a,new THREE.SphereGeometry(.058,12,10),M.skin,0,-.58,0);
+    if(s>0&&o.racket) add(a,new THREE.CylinderGeometry(.05,.05,.07,12),M.trim,0,-.5,0);
+    return {sh,a};
+  };
+  const arms=[arm(1),arm(-1)];
+  if(o.racket){
+    if(!ST_STRINGS) ST_STRINGS=stCanvasTex(64,64,(g)=>{ g.strokeStyle="rgba(255,255,255,.85)"; g.lineWidth=1.2; for(let i=2;i<64;i+=5){ g.beginPath(); g.moveTo(i,0); g.lineTo(i,64); g.moveTo(0,i); g.lineTo(64,i); g.stroke(); } });
+    const rk=new THREE.Group(); rk.position.y=-.6; arms[0].a.add(rk);
+    const frame=std(o.frame||0x222222,.35,{metalness:.2});
+    add(rk,stCyl(.02,.018,.2,10,true),M.dark);
+    add(rk,stCyl(.012,.012,.1,6,true),frame,0,-.2,0);
+    add(rk,new THREE.TorusGeometry(.13,.014,8,28),frame,0,-.43,0).scale.set(1,1.3,1);
+    const str=add(rk,new THREE.CircleGeometry(.125,24),new THREE.MeshBasicMaterial({map:ST_STRINGS,transparent:true,side:THREE.DoubleSide,depthWrite:false}),0,-.43,0);
+    str.scale.set(1,1.3,1); str.userData.noShadow=true;
+  }
+  const legs=[1,-1].map(s=>{
+    const shoe=new THREE.Group(); body.add(shoe);
+    add(shoe,new THREE.BoxGeometry(.29,.035,.13),M.sole,.0,.018,0);
+    add(shoe,new THREE.SphereGeometry(.1,14,10),M.shoe,.0,.055,0).scale.set(1.45,.6,.68);
+    add(shoe,new THREE.BoxGeometry(.12,.012,.02),M.trim,-.02,.07,.058*s);
+    return {s, th:add(body,stCyl(.068,.078,1,12),M.skin), sn:add(body,stCyl(.05,.062,1,12),M.skin), sl:add(body,stCyl(.098,.1,1,12),M.shorts),
+      sock:add(body,new THREE.CylinderGeometry(.056,.056,.1,12),M.white), shoe};
+  });
+  root.traverse(m=>{ if(m.isMesh&&!m.userData.noShadow&&m.material!==M.cheek) m.castShadow=true; });
+  return {root,body,hips,spine,head,arms,legs,M};
 }
+const _p={H:new THREE.Vector3(),K:new THREE.Vector3(),A:new THREE.Vector3(),u:new THREE.Vector3(),w:new THREE.Vector3(),t:new THREE.Vector3(),S:new THREE.Vector3(),
+  pole:new THREE.Vector3(1,.15,0).normalize(),up:new THREE.Vector3(0,1,0),m:new THREE.Matrix4(),x:new THREE.Vector3(),y:new THREE.Vector3(),z:new THREE.Vector3()};
+function stSeg(mesh,a,b){ _p.t.subVectors(b,a); const L=Math.max(1e-3,_p.t.length()); mesh.position.copy(a); mesh.scale.set(1,L,1); mesh.quaternion.setFromUnitVectors(_p.up,_p.t.divideScalar(L)); }
+function stLeg(leg,hipY,f){
+  const q=_p, H=q.H.set(0,hipY-.09,.1*leg.s), A=q.A.set(f.x,f.y+.12,f.z), a=.42, b=.42;
+  q.u.subVectors(A,H); let L=q.u.length(); q.u.divideScalar(L||1); L=Math.min(L,a+b-.002); A.copy(H).addScaledVector(q.u,L);
+  const c=(a*a+L*L-b*b)/(2*a*L), sn=Math.sqrt(Math.max(0,1-c*c));
+  q.w.copy(q.pole).addScaledVector(q.u,-q.pole.dot(q.u)); if(q.w.lengthSq()<1e-6) q.w.set(1,0,0); q.w.normalize();
+  q.K.copy(H).addScaledVector(q.u,a*c).addScaledVector(q.w,a*sn);
+  stSeg(leg.th,H,q.K); stSeg(leg.sn,q.K,A); stSeg(leg.sl,H,q.S.copy(H).lerp(q.K,.42));
+  leg.sock.position.set(A.x,A.y-.03,A.z); leg.shoe.position.set(f.x+.04,f.y,f.z);
+}
+function stAim(grp,dx,dy,dz,nx,ny,nz){
+  const q=_p; q.y.set(-dx,-dy,-dz).normalize(); q.z.set(nx,ny,nz).addScaledVector(q.y,-q.z.dot(q.y));
+  if(q.z.lengthSq()<1e-5) q.z.set(0,0,1).addScaledVector(q.y,-q.y.z); q.z.normalize(); q.x.crossVectors(q.y,q.z);
+  q.m.makeBasis(q.x,q.y,q.z); grp.quaternion.setFromRotationMatrix(q.m);
+}
+function stPoseRig(R,q){
+  R.hips.position.y=q.hipY;
+  R.spine.rotation.set(q.leanS||0,-(q.tw||0)*ST_D,-(q.lean||0));
+  R.legs.forEach((lg,i)=>stLeg(lg,q.hipY,q.feet[i]));
+  const ps=((q.arm||0)-(q.tw||0))*ST_D, e=(q.el||0)*ST_D, dx=Math.cos(ps)*Math.cos(e), dy=Math.sin(e), dz=Math.sin(ps)*Math.cos(e);
+  stAim(R.arms[0].a,dx,dy,dz,Math.sin(ps),0,-Math.cos(ps));
+  if(q.two){
+    const a=R.arms[0].sh.position, b=R.arms[1].sh.position;
+    stAim(R.arms[1].a,a.x+dx*.56-b.x,a.y+dy*.56-b.y,a.z+dz*.56-b.z,Math.sin(ps),0,-Math.cos(ps));
+  } else {
+    const po=((q.off||0)-(q.tw||0))*ST_D, eo=(q.offEl||0)*ST_D;
+    stAim(R.arms[1].a,Math.cos(po)*Math.cos(eo),Math.sin(eo),Math.sin(po)*Math.cos(eo),Math.sin(po),0,-Math.cos(po));
+  }
+  R.head.rotation.y=-(q.head||0)*ST_D;
+}
+/* Pasos: pies según velocidad en el marco del cuerpo */
+function stFeet(p,stance,lift,hop){
+  const a=p.face*ST_D, vx=p.vx/100, vz=p.vy/100, fx=vx*Math.cos(a)+vz*Math.sin(a), fz=-vx*Math.sin(a)+vz*Math.cos(a), sp=Math.hypot(fx,fz);
+  const amp=sp>.15?Math.min(.36,.1+sp*.075):0, ux=sp>.15?fx/sp:0, uz=sp>.15?fz/sp:0;
+  return [1,-1].map((s,i)=>{ const ph=p.ph+(i?Math.PI:0), sw=Math.sin(ph)*amp, up=Math.max(0,Math.cos(ph))*amp*.5;
+    return {x:.03+ux*sw, y:up+lift+hop*.07, z:s*(.12+stance*.1)+uz*sw}; });
+}
+const stLook=(p,ball,extra)=>{ if(!ball) return 0; let la=Math.atan2(ball.y-p.y,ball.x-p.x)/ST_D-p.face-(extra||0); la=((la+540)%360)-180; return Math.max(-75,Math.min(75,la)); };
 
-/* Personas y objetos fijos alrededor de la cancha (svg) */
-function stPerson(x,y,a,shirt,crouch){
-  return `<g transform="translate(${x} ${y}) rotate(${a}) scale(1.25)">
-    <ellipse cx="14" cy="10" rx="${crouch?30:26}" ry="18" fill="#000" opacity=".22"/>
-    ${crouch?`<ellipse cx="15" cy="-10" rx="11" ry="7" fill="#EDEDED"/><ellipse cx="15" cy="10" rx="11" ry="7" fill="#EDEDED"/>`:""}
-    <ellipse rx="13" ry="24" fill="${shirt}" stroke="rgba(0,0,0,.25)" stroke-width="2"/>
-    <circle r="10.5" fill="#E0AC84"/><circle cx="-3" r="9.5" fill="#3A2A1E"/></g>`;
-}
-function stChair(x,y,a,shirt){
-  return `<g transform="translate(${x} ${y}) rotate(${a})"><rect x="-30" y="-34" width="56" height="68" rx="8" fill="#2A2A2A"/></g>${stPerson(x,y,a,shirt,false)}`;
-}
-function stCourtSVG(){
-  const cfg=stCfg();
-  const court=courtSVG().replace('<svg class="court draw"','<svg class="court-n" x="-160" y="-130" width="2697" height="1357"').replace(/<rect class="surf"[^>]*\/>/g,"");
-  const r=`x="${ST_RUN.x}" y="${ST_RUN.y}" width="${ST_RUN.w}" height="${ST_RUN.h}"`;
-  const staff=[[1115,-300,90],[1262,-300,90],[-560,-290,40],[-560,1387,-40],[2937,-290,140],[2937,1387,-140]]
-    .map(([x,y,a],i)=>stPerson(x,y,a,i%2?cfg.kid2:cfg.kid,true)).join("");
-  const judges=cfg.judge?[[-600,137,0],[-600,960,0],[2977,137,180],[2977,960,180],[548,-330,90],[1828,-330,90],[548,1427,-90],[1828,1427,-90]]
-    .map(([x,y,a])=>stChair(x,y,a,cfg.judge)).join(""):"";
-  const bench=x=>`<g transform="translate(${x} 1360)"><rect x="-38" y="-32" width="76" height="64" rx="8" fill="#23282B"/><rect x="-26" y="-20" width="30" height="40" rx="4" fill="#F5F5F2"/><rect x="48" y="-22" width="44" height="44" rx="6" fill="#3A4046"/></g>`;
-  return `<svg class="st-court" viewBox="${ST.x} ${ST.y} ${ST.w} ${ST.h}" aria-hidden="true">
-    <rect ${r} style="fill:var(--court-out)"/>
-    <rect x="0" y="0" width="2377" height="1097" style="fill:var(--court-in)"/>
-    <rect ${r} fill="url(#mow)" style="opacity:var(--mow)"/>
-    <rect ${r} filter="url(#grain)" style="opacity:var(--grain)"/>
-    ${court}
-    ${bench(ST_NET-230)}${bench(ST_NET+170)}
-    <g transform="translate(${ST_NET} 1330)"><rect x="-58" y="-48" width="116" height="96" rx="10" fill="#1E2A24"/><rect x="-44" y="-66" width="88" height="30" rx="6" fill="#2C3A33"/></g>
-    ${stPerson(ST_NET,1335,-90,"#1C2B3D",false)}
-    ${staff}${judges}
-  </svg>`;
-}
-
-/* Capa 3: jugadores (vista desde arriba, mirando hacia +x antes de rotarlos) y pelota */
-function stPlayerSVG(k,skin,hair,frame,cap){
-  const K=k?"B":"A";
-  return `<g id="stSh${k}"><ellipse rx="58" ry="17" fill="#000" opacity=".24"/></g>
-  <g id="stP${k}"><g class="sc">
-    <line class="lgL" stroke="${skin}" stroke-width="9" stroke-linecap="round"/><line class="lgR" stroke="${skin}" stroke-width="9" stroke-linecap="round"/>
-    <ellipse class="shL" rx="10" ry="6" fill="#F6F6F6" stroke="rgba(0,0,0,.35)" stroke-width="2"/><ellipse class="shR" rx="10" ry="6" fill="#F6F6F6" stroke="rgba(0,0,0,.35)" stroke-width="2"/>
-    <ellipse cx="-2" rx="13" ry="18" style="fill:var(--short${K})" stroke="rgba(0,0,0,.2)" stroke-width="2"/>
-    <g class="tor">
-      <ellipse rx="15" ry="27" style="fill:var(--kit${K})" stroke="rgba(0,0,0,.28)" stroke-width="2.5"/>
-      <path d="M-6 -24 Q2 0 -6 24" fill="none" style="stroke:var(--kit${K}-2)" stroke-width="4"/>
-      <path class="arO" fill="none" stroke="${skin}" stroke-width="8.5" stroke-linecap="round"/>
-      <path class="arH" fill="none" stroke="${skin}" stroke-width="8.5" stroke-linecap="round"/>
-      <g class="rk"><line x1="0" y1="0" x2="26" y2="0" stroke="#1B1B1B" stroke-width="6" stroke-linecap="round"/>
-        <ellipse cx="52" rx="27" ry="18" fill="rgba(255,255,255,.3)" stroke="${frame}" stroke-width="6"/></g>
-      <circle r="11.5" fill="${skin}"/>
-      ${cap?`<circle class="hr" r="11" style="fill:var(--kit${K}-2)"/><ellipse class="cp" rx="7" ry="10" style="fill:var(--kit${K}-2)"/>`:`<circle class="hr" r="10.5" fill="${hair}"/>`}
-    </g></g></g>`;
-}
-function stLiveSVG(){
-  return `<svg class="st-live" viewBox="${ST.x} ${ST.y} ${ST.w} ${ST.h}" aria-hidden="true">
-    ${stPlayerSVG(0,"#D9A57C","#3A2A1E","#B8322A",true)}${stPlayerSVG(1,"#E9C29F","#C79A55","#1F3F7A",false)}
-    <polyline id="stTrail" fill="none" stroke="#DDE95B" stroke-linecap="round" stroke-linejoin="round" opacity=".18"/>
-    <circle id="stBallSh" r="10" fill="#000" opacity=".32"/>
-    <circle id="stBall" r="12" fill="#DDE95B" stroke="#8C9630" stroke-width="2"/>
-  </svg>`;
-}
-
-/* Pose del jugador según el golpe: giro de hombros (tw), ángulo del brazo con la raqueta (arm),
-   brazo libre (off) y si agarra con las dos manos. tc = instante del impacto. */
+/* Pose del jugador según el golpe: giro de hombros (tw), brazo de la raqueta (arm: ángulo visto desde arriba,
+   el: elevación), brazo libre (off/offEl), dos manos, flexión (crouch) y salto (lift). tc = instante del impacto. */
 const stEz=u=>u<=0?0:u>=1?1:u*u*(3-2*u), stL=(a,b,u)=>a+(b-a)*stEz(u);
-function stPose(P,t){
-  const st=P.stroke, rdy={tw:0,arm:18,off:-25,two:true};
-  if(!st) return rdy;
+const stBump=(d,c,w)=>{ const u=(d-c)/w; return Math.abs(u)<1?.5+.5*Math.cos(Math.PI*u):0; };
+const ST_READY={tw:0,arm:18,el:-38,off:-20,offEl:-38};
+const stMix=(a,b,u)=>({tw:stL(a.tw,b.tw,u),arm:stL(a.arm,b.arm,u),el:stL(a.el,b.el,u),off:stL(a.off,b.off,u),offEl:stL(a.offEl,b.offEl,u)});
+function stPose3(p,t){
+  const st=p.stroke; if(!st) return {...ST_READY,two:true,crouch:0,lift:0};
   const d=t-st.tc, k=st.type==="bh"?-1:1;
   if(st.type==="sv"){
-    if(d<-1.05) return {tw:0,arm:18,off:-25,two:false};
-    if(d<-.35){ const u=(d+1.05)/.7; return {tw:stL(0,80,u),arm:stL(18,200,u),off:stL(-25,8,u),two:false}; }
-    if(d<0){ const u=(d+.35)/.35; return {tw:stL(80,20,u),arm:stL(200,20,u),off:stL(8,-70,u),two:false}; }
-    if(d<.35){ const u=d/.35; return {tw:stL(20,-40,u),arm:stL(20,-120,u),off:stL(-70,-150,u),two:false}; }
-    if(d<.8){ const u=(d-.35)/.45; return {tw:stL(-40,0,u),arm:stL(-120,18,u),off:stL(-150,-25,u),two:u>.6}; }
-    return rdy;
+    const A={tw:0,arm:18,el:-38,off:5,offEl:-45}, B={tw:70,arm:200,el:50,off:12,offEl:82}, C={tw:20,arm:25,el:78,off:-40,offEl:15}, E={tw:-40,arm:-110,el:-45,off:-150,offEl:-35};
+    const q = d<-1.05?A : d<-.35?stMix(A,B,(d+1.05)/.7) : d<0?stMix(B,C,(d+.35)/.35) : d<.35?stMix(C,E,d/.35) : d<.8?stMix(E,ST_READY,(d-.35)/.45) : ST_READY;
+    return {...q, two:d>.6, crouch:stBump(d,-.5,.35), lift:(d>-.12&&d<.3)?Math.sin(Math.PI*(d+.12)/.42)*.17:0};
   }
-  if(d<-.62) return rdy;
-  if(d<-.18){ const u=(d+.62)/.44; return {tw:stL(0,65*k,u),arm:stL(18,155*k,u),off:stL(-25,45,u),two:k<0}; }
-  if(d<0){ const u=(d+.18)/.18; return {tw:stL(65*k,15*k,u),arm:stL(155*k,62*k,u),off:stL(45,-60,u),two:k<0}; }
-  if(d<.28){ const u=d/.28; return {tw:stL(15*k,-45*k,u),arm:stL(62*k,-95*k,u),off:stL(-60,-150,u),two:k<0}; }
-  if(d<.75){ const u=(d-.28)/.47; return {tw:stL(-45*k,0,u),arm:stL(-95*k,18,u),off:stL(-150,-25,u),two:k<0||u>.6}; }
-  return rdy;
+  const A=ST_READY, B={tw:65*k,arm:155*k,el:8,off:45,offEl:-5}, C={tw:15*k,arm:62*k,el:-12,off:-60,offEl:-20}, E={tw:-45*k,arm:-95*k,el:55,off:-150,offEl:-15};
+  const q = d<-.62?A : d<-.18?stMix(A,B,(d+.62)/.44) : d<0?stMix(B,C,(d+.18)/.18) : d<.28?stMix(C,E,d/.28) : d<.75?stMix(E,A,(d-.28)/.47) : A;
+  return {...q, two:k<0||d>.6||d<-.62, crouch:stBump(d,-.12,.4)*.7, lift:0};
 }
-/* Dónde queda la cabeza de la raqueta en el impacto, relativo al cuerpo: [hacia adelante, hacia la derecha] */
+/* Dónde queda la cabeza de la raqueta en el impacto, relativo al cuerpo: [hacia adelante, hacia la derecha] (cm) */
 const ST_S=1.6, ST_REACH={fh:[33.4*ST_S,91.7*ST_S], bh:[33.4*ST_S,-91.7*ST_S], sv:[70*ST_S,47*ST_S]};
 
-function stInit(){
-  const bg=document.getElementById("gateBg");
-  bg.innerHTML=`<div class="stadium"><canvas class="st-bowl"></canvas><div class="st-cw"></div>${stLiveSVG()}</div>`;
-  const cv=bg.querySelector(".st-bowl"), cw=bg.querySelector(".st-cw");
-  const paint=()=>{ stDrawBowl(cv); cw.innerHTML=stCourtSVG(); };
-  paint();
-  new MutationObserver(paint).observe(document.documentElement,{attributes:true,attributeFilter:["data-surface"]});
-  let rz=0; addEventListener("resize",()=>{ clearTimeout(rz); rz=setTimeout(()=>{ if(document.getElementById("gateRoot").style.display!=="none") stDrawBowl(cv); },250); });
-  stGame(bg.querySelector(".st-live"));
+function stPlayerQ(p,t,G,ball){
+  const ps=stPose3(p,t), play=G.mode==="play", sp=Math.hypot(p.vx,p.vy)/100;
+  const a=p.face*ST_D, fx=(p.vx*Math.cos(a)+p.vy*Math.sin(a))/100;
+  let q={...ps};
+  if(!p.stroke&&!play&&sp>.3){ const s=Math.sin(p.ph); q={...q,arm:s*30,el:-72,off:-s*30,offEl:-72,two:false}; }
+  if(t-p.cheerT<1.1){ const u=Math.sin(Math.PI*Math.min(1,(t-p.cheerT)/1.1)); q={...q,off:stL(q.off,15,u*1.5),offEl:stL(q.offEl,80,u*1.5),two:false}; }
+  const stance=play?1:0, hop=p.hop||0;
+  q.feet=stFeet(p,stance,ps.lift,hop);
+  q.hipY=.86-.07*stance-.12*ps.crouch+ps.lift+hop*.07-Math.abs(Math.sin(p.ph))*.03*Math.min(1,sp/2);
+  q.lean=.05+.1*stance+.2*ps.crouch+Math.max(-.1,Math.min(.2,fx*.04));
+  q.head=stLook(p,ball,q.tw);
+  return q;
+}
+function stKidQ(k,ball){
+  const sp=Math.hypot(k.vx,k.vy)/100, look=stLook(k,ball);
+  if(sp>.4){ const s=Math.sin(k.ph); return {hipY:.84-Math.abs(s)*.04,feet:stFeet(k,0,0,0),lean:.18,arm:s*40,el:-62,off:-s*40,offEl:-62,head:look*.3}; }
+  if(k.pose==="crouch") return {hipY:.5,feet:[{x:.28,y:0,z:.17},{x:.28,y:0,z:-.17}],lean:.45,arm:10,el:-58,off:-10,offEl:-58,head:look};
+  return {hipY:.86,feet:[{x:.02,y:0,z:.13},{x:.02,y:0,z:-.13}],lean:.02,arm:-150,el:-72,off:150,offEl:-72,head:look};
 }
 
-function stGame(svg){
-  const gate=document.getElementById("gateRoot"), rnd=Math.random, rad=Math.PI/180;
-  const el=[0,1].map(k=>{ const r=svg.querySelector("#stP"+k), q=c=>r.querySelector(c);
-    return {root:r, sh:svg.querySelector("#stSh"+k), sc:q(".sc"), lgL:q(".lgL"), lgR:q(".lgR"), shL:q(".shL"), shR:q(".shR"), tor:q(".tor"),
-      arO:q(".arO"), arH:q(".arH"), rk:q(".rk"), hr:q(".hr"), cp:q(".cp")}; });
-  const ballEl=svg.querySelector("#stBall"), shEl=svg.querySelector("#stBallSh"), trail=svg.querySelector("#stTrail");
-  const P=[{x:-40,y:ST_MID+90,face:0},{x:2487,y:ST_MID-330,face:180}].map(p=>({...p,vx:0,vy:0,tx:p.x,ty:p.y,ph:0,hopT:-9,hop:0,stroke:null}));
-  const G={t:0, server:0, point:0, mode:"walk", modeT:0, next:null, segs:[], shots:0, ballVis:false, trail:[]};
-  const fwd=p=>[Math.cos(p.face*rad),Math.sin(p.face*rad)], rgt=p=>[-Math.sin(p.face*rad),Math.cos(p.face*rad)];
-  const clampRun=(x,y)=>[Math.max(ST_RUN.x+40,Math.min(ST_RUN.x+ST_RUN.w-40,x)),Math.max(ST_RUN.y+40,Math.min(ST_RUN.y+ST_RUN.h-40,y))];
+/* ---------- Construcción de cada estadio ---------- */
+function stBuildVenue(key,low,cams){
+  const V=VENUES[key], grp=new THREE.Group(), mat=(c,r)=>new THREE.MeshStandardMaterial({color:stLin(c),roughness:r??.85});
+  // piso de la cancha
+  const ct=stCourtTex(key);
+  const court=new THREE.Mesh(new THREE.PlaneGeometry(2*ST_HX+.6,2*ST_HZ+.6),new THREE.MeshStandardMaterial({map:ct.map,bumpMap:ct.bump,bumpScale:key==="dura"?.004:.012,roughness:key==="dura"?.55:.95}));
+  court.rotation.x=-Math.PI/2; court.receiveShadow=true; grp.add(court);
+  // muro de la cancha con el nombre del torneo y tribunas escalonadas
+  grp.add(stFacade(0,0,V.wall.h,V.shape,stTex(V.wall.tex,V),14));
+  grp.add(stBand(0,.3,0,V.wall.h,V.shape,mat(V.wall.c)));
+  const tiers=[]; let prevOuter=.3, prevTop=V.wall.h;
+  V.tiers.forEach((T,i)=>{
+    const o0=prevOuter+T.gap, base=i?prevTop+T.lift:T.base, bottom=i?base-1.2:0, mats=T.seat.map(c=>mat(c,.9));
+    for(let r=0;r<T.rows;r++){ const b=stBand(o0+r*T.d,o0+(r+1)*T.d+.002,bottom,base+r*T.h,V.shape,mats[r%2]); if(i) b.castShadow=true; grp.add(b); }
+    if(i){
+      grp.add(stBand(prevOuter-.002,o0+.2,0,prevTop+.05,V.shape,mat(V.walk)));
+      grp.add(stFacade(o0-.03,prevTop+.05,base+.02,V.shape,stTex(T.facade==="wimb"?"wimb-f":T.facade,V),10));
+    }
+    tiers.push({o0,base,rows:T.rows,d:T.d,h:T.h,top:base+(T.rows-1)*T.h,outer:o0+T.rows*T.d});
+    prevOuter=o0+T.rows*T.d; prevTop=base+(T.rows-1)*T.h;
+  });
+  const rim=stBand(prevOuter,prevOuter+.8,0,prevTop+2.6,V.shape,mat(V.rim)); rim.castShadow=true; grp.add(rim);
+  const T0=tiers[0], T1=tiers[1];
+
+  // público (se orienta hacia la cámara que esté activa)
+  const orientCrowd=stBuildCrowd(grp,V,tiers,low,[cams.land,cams.port]);
+
+  // techos
+  const members=[], M=(a,b,t)=>members.push(a[0],a[1],a[2],b[0],b[1],b[2],t);
+  if(V.roof==="chatrier"){
+    const oc=T1.o0+T1.rows*T1.d*.35, y=T1.top+3.2;
+    const cn=stBand(oc,T1.outer+1.5,y,y+.7,V.shape,mat(0xE4E2DC,.7)); cn.castShadow=true; grp.add(cn);
+    const slat=mat(0xEFEEEA,.6), under=mat(0xE2E0DA,.8);
+    for(let i=0;i<10;i++){
+      const z=-(ST_HZ+oc-9)-i*2.9, hx=ST_HX+oc+2-i*.5;
+      const s=new THREE.Mesh(new THREE.BoxGeometry(2*hx,.8,3.4),[slat,slat,slat,under,slat,slat]); s.position.set(0,y+1.1+i*.5,z); s.rotation.x=-.08; s.castShadow=true; grp.add(s);
+    }
+    for(const x of [-1,1]) M([x*(ST_HX+oc+4),y+.7,-(ST_HZ+T1.outer)],[x*(ST_HX+oc+4),y+6,-(ST_HZ+oc-4)],.7);
+  } else if(V.roof==="wimb"){
+    const oc=T1.o0+T1.rows*T1.d*.3, y=T1.top+2.6, hxO=ST_HX+oc+1, hzO=ST_HZ+oc+1, N=9, rise=5.5;
+    const cn=stBand(oc,T1.outer+1.5,y,y+.9,V.shape,mat(0x3A3F42,.7)); cn.castShadow=true; grp.add(cn);
+    const xs=[...Array(N)].map((_,i)=>-hxO+2+i*(2*hxO-4)/(N-1)), SEG=18;
+    const top=(x,u)=>[x,y+.9+rise*Math.sin(Math.PI*u),-hzO+2*hzO*u], bot=(x,u)=>[x,y+.9+rise*Math.sin(Math.PI*u)-1.5,-hzO+2*hzO*u];
+    xs.forEach(x=>{ for(let s=0;s<SEG;s++){ const u0=s/SEG, u1=(s+1)/SEG;
+      M(top(x,u0),top(x,u1),.32); M(bot(x,u0),bot(x,u1),.24); M(bot(x,u0),top(x,u1),.1); M(top(x,u0),bot(x,u0),.08); } });
+    const pos=[];
+    for(let i=0;i<N-1;i++) for(let s=0;s<SEG;s++){ const a=top(xs[i],s/SEG), b=top(xs[i],(s+1)/SEG), c=top(xs[i+1],(s+1)/SEG), d=top(xs[i+1],s/SEG);
+      pos.push(...a,...b,...c,...a,...c,...d); }
+    const fg=new THREE.BufferGeometry(); fg.setAttribute("position",new THREE.Float32BufferAttribute(pos,3)); fg.computeVertexNormals();
+    grp.add(new THREE.Mesh(fg,new THREE.MeshStandardMaterial({color:stLin(0xFFFFFF),emissive:stLin(0xEEF2F4),emissiveIntensity:.7,transparent:true,opacity:.6,side:THREE.DoubleSide,depthWrite:false})));
+  } else {
+    const oc=T1.o0+3, y=T1.top+4.5, ring=stRingM(oc,V.shape);
+    const sl=stBand(oc,T1.outer+2,y,y+1.2,V.shape,mat(0xD9DEE3,.6)); sl.castShadow=true; grp.add(sl);
+    const truss=(a,b,y0,y1,step)=>{ const L=Math.hypot(b[0]-a[0],b[1]-a[1]), n=Math.max(2,Math.round(L/step));
+      const P=(u,yy)=>[a[0]+(b[0]-a[0])*u,yy,a[1]+(b[1]-a[1])*u];
+      M(P(0,y0),P(1,y0),.45); M(P(0,y1),P(1,y1),.45);
+      for(let k=0;k<n;k++){ const u0=k/n,u1=(k+1)/n; M(P(u0,y0),P(u0,y1),.2); M(k%2?P(u0,y0):P(u0,y1),k%2?P(u1,y1):P(u1,y0),.2); } };
+    ring.forEach((p,i)=>truss(p,ring[(i+1)%ring.length],y+1.2,y+4.2,3.5));
+    const hx=ST_HX+oc, zs=(ST_HZ+oc)*.55;
+    for(const s of [-1,1]) truss([-hx,s*zs],[hx,s*zs],y+1.2,y+4.8,4);
+    for(const s of [-1,1]){ const pn=new THREE.Mesh(new THREE.BoxGeometry(9,.6,2*zs),mat(0xE6EAEE,.6)); pn.position.set(s*(hx-5),y+4.9,0); pn.castShadow=true; grp.add(pn); }
+  }
+  if(members.length) grp.add(stMembers(members,V.roof==="wimb"?0xD4D8DB:0xF1F3F5));
+
+  // red con malla
+  const netTex=stCanvasTex(64,64,(g)=>{ g.strokeStyle="rgba(20,20,20,.95)"; g.lineWidth=3; for(let i=0;i<64;i+=16){ g.beginPath(); g.moveTo(i+1,0); g.lineTo(i+1,64); g.moveTo(0,i+1); g.lineTo(64,i+1); g.stroke(); } },true);
+  netTex.repeat.set(12.8/.36,.95/.36);
+  const net=new THREE.Mesh(new THREE.PlaneGeometry(12.8,.95),new THREE.MeshStandardMaterial({map:netTex,transparent:true,side:THREE.DoubleSide,roughness:.9,depthWrite:false}));
+  net.rotation.y=Math.PI/2; net.position.y=.49; grp.add(net);
+  const tape=new THREE.Mesh(new THREE.BoxGeometry(.05,.07,12.8),mat(0xFAFAF7,.7)); tape.position.y=.99; tape.castShadow=true; grp.add(tape);
+  const strap=new THREE.Mesh(new THREE.BoxGeometry(.04,.95,.05),mat(0xFAFAF7,.7)); strap.position.y=.5; grp.add(strap);
+  for(const s of [-1,1]){ const post=new THREE.Mesh(new THREE.CylinderGeometry(.045,.045,1.07,12),mat(V.post,.5)); post.position.set(0,.535,s*6.4); post.castShadow=true; grp.add(post); }
+
+  // silla del umpire, sillas de los jugadores
+  const chairC=mat(V.post,.6), uz=-7.7;
+  for(const [x,z] of [[-.35,-.3],[.35,-.3],[-.35,.3],[.35,.3]]){ const l=new THREE.Mesh(new THREE.BoxGeometry(.07,1.95,.07),chairC); l.position.set(x,.98,uz+z); l.castShadow=true; grp.add(l); }
+  const seatB=new THREE.Mesh(new THREE.BoxGeometry(.9,.12,.85),chairC); seatB.position.set(0,1.95,uz); seatB.castShadow=true; grp.add(seatB);
+  const back=new THREE.Mesh(new THREE.BoxGeometry(.9,.8,.08),chairC); back.position.set(0,2.4,uz-.42); grp.add(back);
+  for(const s of [-1,1]){ const ch=new THREE.Mesh(new THREE.BoxGeometry(.55,.9,.5),chairC); ch.position.set(s*2.2,.45,-7.3); ch.castShadow=true; grp.add(ch);
+    const tw=new THREE.Mesh(new THREE.BoxGeometry(.5,.08,.4),mat(0xF4F4F0)); tw.position.set(s*2.2,.94,-7.3); grp.add(tw); }
+  const ump=stPerson({skin:0xE0AC84,hair:0x4A3322,shirt:V.ump,trim:0xF4F4F0,shorts:0x2A2A2A,shoe:0x1A1A1A,scale:1});
+  ump.root.position.set(0,1.62,uz); ump.root.rotation.y=-Math.PI/2; grp.add(ump.root);
+  stPoseRig(ump,{hipY:.42,feet:[{x:.36,y:-.02,z:.13},{x:.36,y:-.02,z:-.13}],lean:.12,arm:25,el:-35,off:-25,offEl:-35});
+
+  // alcanzapelotas
+  const kids=[0,1,2,3,4,5].map(i=>{ const r=stPerson({skin:ST_SKINS[(i*3)%ST_SKINS.length],hair:ST_HAIRS[(i*2)%ST_HAIRS.length],shirt:V.kid[0],trim:V.kid[1],shorts:V.kid[0],scale:.78}); grp.add(r.root); return r; });
+
+  // pantallas con el marcador
+  const scr=(x,y,z,w,h,free)=>{ const g=new THREE.Group(); g.position.set(x,y,z);
+    g.rotation.y=free?Math.atan2(-x,-z):Math.abs(z)>Math.abs(x)?(z<0?0:Math.PI):(x>0?-Math.PI/2:Math.PI/2);   // paralela a la pared
+    const fr=new THREE.Mesh(new THREE.BoxGeometry(w+.3,h+.3,.3),mat(0x15181C,.5)); fr.position.z=-.16; g.add(fr);
+    g.add(new THREE.Mesh(new THREE.PlaneGeometry(w,h),ST3D_SB.mat)); grp.add(g); };
+  const fh=3.6, fy=T0.top+fh/2+.3;
+  scr(-13,fy,-(ST_HZ+T1.o0-.4),fh*2.6,fh); scr(13,fy,-(ST_HZ+T1.o0-.4),fh*2.6,fh);
+  scr(ST_HX+T1.o0-.4,fy,0,fh*2.6,fh); scr(-(ST_HX+T1.o0-.4),fy,0,fh*2.6,fh);
+  if(V.roof==="ashe"){ const oc=T1.o0+3, y=T1.top+3; for(const sx of [-1,1]) for(const sz of [-1,1]) scr(sx*(ST_HX+oc-4),y,sz*(ST_HZ+oc-4),6,3.4,true); }
+
+  return {grp,tiers,kids,ump,orientCrowd};
+}
+
+/* ---------- Marcador (una textura compartida por todas las pantallas) ---------- */
+let ST3D_SB=null;
+function stScoreboard(){
+  const c=document.createElement("canvas"); c.width=640; c.height=240;
+  const tex=new THREE.CanvasTexture(c); tex.encoding=THREE.sRGBEncoding; tex.anisotropy=4; tex.stKeep=true;
+  const mat=new THREE.MeshBasicMaterial({map:tex,toneMapped:false}); mat.userData.keep=true;
+  const names=["M. ACOSTA","T. RÍOS"];
+  const draw=(S,server)=>{
+    const V=VENUES[stKey()], g=c.getContext("2d"), pts=(a,b)=> a>=3&&b>=3 ? (a===b?"40":a>b?"AD":"40") : ["0","15","30","40"][Math.min(a,3)];
+    g.fillStyle="#14224A"; g.fillRect(0,0,640,240); g.fillStyle="#24386E"; g.fillRect(0,0,640,54);
+    g.textBaseline="middle"; g.fillStyle="#EEF2FA"; g.font=stFont(900,24); g.fillText(V.tour,20,28);
+    g.fillStyle="#8D9AB8"; g.font=stFont(700,15); g.textAlign="right"; g.fillText(V.court,620,28); g.textAlign="left";
+    const kit=[stCss("--kitA")||"#1E3F8F",stCss("--kitB")||"#F4F1EA"];
+    g.fillStyle="#8D9AB8"; g.font="700 16px Arial,Helvetica,sans-serif"; g.textAlign="center";
+    g.fillText("SETS",405,70); g.fillText("GAMES",480,70); g.fillText("PTS",575,70); g.textAlign="left";
+    [0,1].forEach(i=>{ const y=118+i*72;
+      g.fillStyle=kit[i]; g.fillRect(22,y-22,14,44); g.strokeStyle="rgba(255,255,255,.35)"; g.strokeRect(22,y-22,14,44);
+      g.fillStyle="#FFFFFF"; g.font="700 32px Arial,Helvetica,sans-serif"; g.fillText(names[i],52,y);
+      if(server===i){ g.fillStyle="#DDE95B"; g.beginPath(); g.arc(320,y,9,0,6.3); g.fill(); }
+      g.textAlign="center"; g.font="800 38px Arial,Helvetica,sans-serif"; g.fillStyle="#C9D2E6";
+      g.fillText(S.s[i],405,y); g.fillText(S.g[i],480,y);
+      g.fillStyle="#DDE95B"; g.fillRect(535,y-28,80,56); g.fillStyle="#1C2200"; g.fillText(pts(S.p[i],S.p[1-i]),575,y+1); g.textAlign="left"; });
+    tex.needsUpdate=true;
+  };
+  ST3D_SB={tex,mat,draw};
+}
+
+/* ---------- Cielo y luz de ambiente ---------- */
+function stSky(V){
+  const bg=stCanvasTex(4,256,(g,w,h)=>{ const gr=g.createLinearGradient(0,0,0,h); gr.addColorStop(0,V.sky[0]); gr.addColorStop(1,V.sky[1]); g.fillStyle=gr; g.fillRect(0,0,w,h); });
+  const eq=stCanvasTex(256,128,(g,w,h)=>{ const gr=g.createLinearGradient(0,0,0,h); gr.addColorStop(0,V.sky[0]); gr.addColorStop(.48,V.sky[1]); gr.addColorStop(.52,"#9A958C"); gr.addColorStop(1,V.ground); g.fillStyle=gr; g.fillRect(0,0,w,h); });
+  eq.mapping=THREE.EquirectangularReflectionMapping;
+  return {bg,eq};
+}
+
+/* ---------- Escena, cámara fija gran angular y dibujo ---------- */
+let ST3D=null;
+function st3dInit(){
+  const bg=document.getElementById("gateBg");
+  bg.innerHTML=`<canvas class="st3d"></canvas>`;
+  const canvas=bg.querySelector("canvas.st3d");
+  const low=Math.min(innerWidth,innerHeight)<700||(navigator.hardwareConcurrency||8)<=4;
+  const renderer=new THREE.WebGLRenderer({canvas,antialias:false,powerPreference:"high-performance"});
+  renderer.outputEncoding=THREE.sRGBEncoding; renderer.toneMapping=THREE.ACESFilmicToneMapping;
+  renderer.shadowMap.enabled=true; renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+  const pmrem=new THREE.PMREMGenerator(renderer);
+  const scene=new THREE.Scene(), camera=new THREE.PerspectiveCamera(70,1,.3,320);
+  const hemi=new THREE.HemisphereLight(0xffffff,0x777777,.4), sun=new THREE.DirectionalLight(0xffffff,2);
+  sun.castShadow=true; sun.shadow.mapSize.set(low?1536:2048,low?1536:2048);
+  Object.assign(sun.shadow.camera,{left:-58,right:58,top:58,bottom:-58,near:10,far:260}); sun.shadow.bias=-.0006; sun.shadow.normalBias=.04;
+  scene.add(hemi,sun,sun.target);
+  stScoreboard();
+
+  // pasada final: lente ultra gran angular (barril) + viñeta
+  const RTC=(renderer.capabilities.isWebGL2&&THREE.WebGLMultisampleRenderTarget)?THREE.WebGLMultisampleRenderTarget:THREE.WebGLRenderTarget;
+  const rt=new RTC(2,2,{encoding:THREE.sRGBEncoding});
+  const lens=new THREE.ShaderMaterial({uniforms:{tDiffuse:{value:rt.texture},uK:{value:.1},uAspect:{value:new THREE.Vector2(1,1)}},depthTest:false,depthWrite:false,
+    vertexShader:"varying vec2 vUv; void main(){ vUv=uv; gl_Position=vec4(position.xy,0.0,1.0); }",
+    fragmentShader:"uniform sampler2D tDiffuse; uniform float uK; uniform vec2 uAspect; varying vec2 vUv;\n"+
+      "void main(){ vec2 p=(vUv*2.0-1.0)*uAspect; float m=dot(uAspect,uAspect);\n"+
+      " vec2 q=p*(1.0+uK*dot(p,p))/(1.0+uK*m); vec2 uv=q/uAspect*0.5+0.5;\n"+
+      " vec4 c=texture2D(tDiffuse,uv); float v=length(vUv*2.0-1.0); c.rgb*=mix(1.0,0.72,smoothstep(0.75,1.45,v)); gl_FragColor=c; }"});
+  const lensScene=new THREE.Scene(), lensCam=new THREE.OrthographicCamera(-1,1,1,-1,0,1);
+  lensScene.add(new THREE.Mesh(new THREE.PlaneGeometry(2,2),lens));
+
+  const kitVars=[["--kitA","--kitA-2","--shortA"],["--kitB","--kitB-2","--shortB"]];
+  const players=[
+    stPerson({skin:0xD9A57C,hair:0x3A2A1E,shirt:stCss("--kitA")||"#1E3F8F",trim:stCss("--kitA-2")||"#E0662A",shorts:stCss("--shortA")||"#F4F1EA",cap:true,racket:true,frame:0xB8322A,iris:0x4A3020,scale:1.15}),
+    stPerson({skin:0xE9C29F,hair:0xC79A55,shirt:stCss("--kitB")||"#F4F1EA",trim:stCss("--kitB-2")||"#E0662A",shorts:stCss("--shortB")||"#1E2F58",racket:true,frame:0x1F3F7A,iris:0x3E6FA8,scale:1.15})];
+  players.forEach(p=>scene.add(p.root));
+  const ball=new THREE.Mesh(new THREE.SphereGeometry(.07,16,12),new THREE.MeshStandardMaterial({color:stLin(0xDDE95B),emissive:stLin(0x2A3008),roughness:.6}));
+  ball.castShadow=true; ball.visible=false; scene.add(ball);
+  const trail=[...Array(6)].map((_,i)=>{ const m=new THREE.Mesh(new THREE.SphereGeometry(.06*(1-i*.12),10,8),new THREE.MeshBasicMaterial({color:stLin(0xE6F07A),transparent:true,opacity:.28*(1-i/6),depthWrite:false})); m.visible=false; scene.add(m); return m; });
+  const hist=[];
+
+  const S={p:[0,0],g:[3,2],s:[1,0]};
+  let venue=null, key=null, cams=null, fitW=0, fitH=0, land=true, envTex=null;
+  // Cámaras fijas: horizontal = desde el medio de un lateral, alta; vertical = detrás de un fondo.
+  const camsFor=tiers=>{ const T=tiers[0], oc=Math.min(12,T.rows*T.d-1.2), r=Math.max(0,Math.floor((oc-T.o0)/T.d)), y=T.base+r*T.h+4.2;
+    return {land:{x:0,y,z:ST_HZ+oc,lx:0,ly:4,lz:-6,fov:68,k:.075}, port:{x:-(ST_HX+oc),y:y+1.5,z:0,lx:5,ly:0,lz:0,fov:78,k:.12}}; };
+  const aim=()=>{ const C=land?cams.land:cams.port; camera.position.set(C.x,C.y,C.z); camera.lookAt(C.lx,C.ly,C.lz);
+    camera.fov=C.fov; camera.updateProjectionMatrix(); lens.uniforms.uK.value=C.k; venue.orientCrowd(C); };
+  const build=()=>{
+    key=stKey(); const V=VENUES[key];
+    if(venue){ scene.remove(venue.grp); venue.grp.traverse(m=>{ if(m.geometry) m.geometry.dispose(); const ms=m.material?(Array.isArray(m.material)?m.material:[m.material]):[];
+      ms.forEach(mt=>{ if(mt.userData.keep) return; for(const k of ["map","bumpMap"]) if(mt[k]&&!mt[k].stKeep&&mt[k]!==ST_STRINGS) mt[k].dispose(); mt.dispose(); }); }); }
+    const T0=V.tiers[0]; cams=camsFor([{o0:.6,base:T0.base,rows:T0.rows,d:T0.d,h:T0.h}]);
+    venue=stBuildVenue(key,low,cams); scene.add(venue.grp);
+    const sky=stSky(V); if(scene.background&&scene.background.dispose) scene.background.dispose(); scene.background=sky.bg;
+    if(envTex) envTex.dispose(); envTex=pmrem.fromEquirectangular(sky.eq).texture; sky.eq.dispose(); scene.environment=envTex;
+    scene.fog=new THREE.Fog(stLin(V.sky[1]),120,300);
+    hemi.intensity=V.hemi; sun.intensity=V.sun; renderer.toneMappingExposure=V.exposure;
+    sun.position.set(V.sunDir[0]*110,V.sunDir[1]*110,V.sunDir[2]*110);
+    players.forEach((R,i)=>{ const [a,b,c]=kitVars[i]; R.M.shirt.color.copy(stLin(stCss(a)||"#fff")); R.M.trim.color.copy(stLin(stCss(b)||"#888")); R.M.shorts.color.copy(stLin(stCss(c)||"#222")); });
+    ST3D_SB.draw(S,ST3D?ST3D.server:0);
+    aim();
+    const lab=document.getElementById("gateVenue"); if(lab) lab.textContent=`${V.court} · ${V.tour}`;
+  };
+  const fit=()=>{ const w=innerWidth, h=innerHeight; if(w===fitW&&h===fitH) return; fitW=w; fitH=h;
+    const pr=Math.min(low?1.25:1.5,devicePixelRatio||1);
+    renderer.setPixelRatio(pr); renderer.setSize(w,h,false); rt.setSize(Math.round(w*pr),Math.round(h*pr));
+    camera.aspect=w/h; lens.uniforms.uAspect.value.set(w/h,1);
+    const l=w/h>=1.05; if(l!==land||!venue){ land=l; } if(venue) aim(); };
+  build(); fit(); aim();
+  new MutationObserver(()=>{ if(stKey()!==key){ build(); if(ST3D.reduced) ST3D.render(); } }).observe(document.documentElement,{attributes:true,attributeFilter:["data-surface"]});
+  addEventListener("resize",()=>{ fit(); if(ST3D.reduced) ST3D.render(); });
+
+  const draw=()=>{ renderer.setRenderTarget(rt); renderer.render(scene,camera); renderer.setRenderTarget(null); renderer.render(lensScene,lensCam); };
+  ST3D={scene,camera,renderer,players,S,server:0,reduced:matchMedia("(prefers-reduced-motion: reduce)").matches,
+    get venue(){ return venue; }, draw,
+    render(){ draw(); },
+    tick(t,dt,P,K,G,ballAt){
+      fit();
+      stU.uTime.value=t; const ct=t-G.clapT; stU.uClap.value=ct<0?0:Math.min(1,ct*4)*Math.max(0,1-ct/2.4);
+      const b=G.ballVis?ballAt(t):null;
+      P.forEach((p,i)=>{ const R=players[i]; R.root.position.set((p.x-ST_NET)/100,0,(p.y-ST_MID)/100); R.root.rotation.y=-p.face*ST_D; stPoseRig(R,stPlayerQ(p,t,G,b)); });
+      K.forEach((k,i)=>{ const R=venue.kids[i]; R.root.position.set((k.x-ST_NET)/100,0,(k.y-ST_MID)/100); R.root.rotation.y=-k.face*ST_D; stPoseRig(R,stKidQ(k,b)); });
+      if(b){ venue.ump.head.rotation.y=-Math.max(-70,Math.min(70,Math.atan2(-(b.x-ST_NET),(b.y-ST_MID)+770)/ST_D))*ST_D; }
+      ball.visible=!!b;
+      if(b){ ball.position.set((b.x-ST_NET)/100,b.z/100+.07,(b.y-ST_MID)/100); hist.unshift(ball.position.clone()); }
+      else hist.length=0;
+      if(hist.length>7) hist.length=7;
+      trail.forEach((m,i)=>{ const h=hist[i+1]; m.visible=!!h; if(h) m.position.copy(h); });
+      draw();
+    }};
+}
+
+/* Botón "Ver partido": oculta la tarjeta de clubes para mirar solo la animación (Esc o "Volver" la trae de nuevo) */
+function stWatchUI(){
+  const root=document.getElementById("gateRoot"), btn=document.getElementById("gateWatchBtn");
+  if(!btn) return;
+  const set=on=>{ root.classList.toggle("watching",on); btn.setAttribute("aria-pressed",on);
+    btn.querySelector("span").textContent=on?"Volver":"Ver partido"; btn.title=on?"Volver a los clubes":"Ocultar la tarjeta y ver el partido"; };
+  btn.hidden=false;
+  btn.addEventListener("click",()=>set(!root.classList.contains("watching")));
+  addEventListener("keydown",e=>{ if(e.key==="Escape"&&root.classList.contains("watching")) set(false); });
+}
+
+function stInit(){
+  try{
+    if(!window.THREE) throw new Error("Three.js no cargó");
+    st3dInit(); stGame(); stWatchUI();
+  }catch(e){ console.warn("Fondo 3D no disponible:",e); }
+}
+
+/* ---------- Simulación del partido (en centímetros, vista cenital) ---------- */
+function stGame(){
+  const gate=document.getElementById("gateRoot"), rnd=Math.random, S=ST3D.S;
+  const mk=(x,y,face)=>({x,y,face,faceBase:face,vx:0,vy:0,tx:x,ty:y,ph:0,hopT:-9,hop:0,stroke:null,cheerT:-9});
+  const P=[mk(-40,ST_MID+90,0),mk(2487,ST_MID-330,180)];
+  const K=[[ST_NET+130,ST_MID+720,-90,"crouch"],[ST_NET+130,ST_MID-720,90,"crouch"],
+           [ST_NET-1780,ST_MID+470,0,"stand"],[ST_NET-1780,ST_MID-470,0,"stand"],[ST_NET+1780,ST_MID+470,180,"stand"],[ST_NET+1780,ST_MID-470,180,"stand"]]
+    .map(([x,y,f,pose])=>({...mk(x,y,f),home:[x,y],pose}));
+  const G={t:0, server:0, mode:"walk", modeT:0, next:null, segs:[], shots:0, ballVis:false, deadT:0, pw:0, clapT:-9, fetch:null};
+  const fwd=p=>[Math.cos(p.face*ST_D),Math.sin(p.face*ST_D)], rgt=p=>[-Math.sin(p.face*ST_D),Math.cos(p.face*ST_D)];
+  const clampRun=(x,y)=>[Math.max(ST_IN.x0+140,Math.min(ST_IN.x1-140,x)),Math.max(ST_IN.y0+140,Math.min(ST_IN.y1-140,y))];
   const seg=(t0,a,b,T,g)=>({t0,T,a,b,g,vz:(b.z-a.z+g*T*T/2)/T});
   const reachIn=(T,vm,ac)=>T<vm/ac?.5*ac*T*T:vm*T-vm*vm/(2*ac);
+  const turn=(p,target,dt,rate)=>{ const d=((target-p.face+540)%360)-180; p.face+=d*Math.min(1,dt*rate); };
 
   function ballAt(t){
     for(const s of G.segs){ const u=t-s.t0; if(u>=0&&u<=s.T){ const f=u/s.T; return {x:s.a.x+(s.b.x-s.a.x)*f, y:s.a.y+(s.b.y-s.a.y)*f, z:Math.max(0,s.a.z+s.vz*u-s.g*u*u/2)}; } }
     const l=G.segs[G.segs.length-1]; return l?{...l.b}:null;
   }
   function servePositions(){
-    const side=G.point%2, sv=P[G.server], rv=P[1-G.server], sgnS=G.server===0?1:-1;
+    const side=(S.p[0]+S.p[1])%2, sv=P[G.server], rv=P[1-G.server], sgnS=G.server===0?1:-1;
     sv.tx=G.server===0?-40:2417; sv.ty=ST_MID+sgnS*(side?-90:90);
     rv.tx=G.server===0?2462:-85; rv.ty=ST_MID-sgnS*(side?-330:330);
   }
+  function pointWon(w){
+    const l=1-w; S.p[w]++;
+    if(S.p[w]>=4&&S.p[w]-S.p[l]>=2){ S.p=[0,0]; S.g[w]++; G.server=1-G.server;
+      if(S.g[w]>=6&&S.g[w]-S.g[l]>=2){ S.g=[0,0]; S.s[w]++; if(S.s[w]>=2) S.s=[0,0]; } }
+    ST3D.server=G.server; ST3D_SB.draw(S,G.server);
+  }
   function startServe(t){
-    const sv=P[G.server], f=fwd(sv), r=rgt(sv), tc=t+1.15;
+    P.forEach(p=>{ p.face=p.faceBase; });
+    const sv=P[G.server], f=fwd(sv), r=rgt(sv);
+    const hand={x:sv.x+f[0]*35-r[0]*25, y:sv.y+f[1]*35-r[1]*25, z:95}, gr={x:hand.x+f[0]*10, y:hand.y+f[1]*10, z:0};
+    const tc=t+2.75;
     sv.stroke={type:"sv",tc}; P[1-G.server].stroke=null;
-    const hand={x:sv.x+f[0]*30-r[0]*30, y:sv.y+f[1]*30-r[1]*30, z:105};
     const ct={x:sv.x+f[0]*ST_REACH.sv[0]+r[0]*ST_REACH.sv[1], y:sv.y+f[1]*ST_REACH.sv[0]+r[1]*ST_REACH.sv[1], z:272};
-    G.segs=[seg(t,hand,hand,.15,0), seg(t+.15,hand,ct,1.0,981)];
-    G.ballVis=true; G.trail=[]; G.mode="play"; G.shots=2+Math.floor(rnd()*7);
+    G.segs=[seg(t,hand,gr,.3,981), seg(t+.3,gr,hand,.4,981), seg(t+.7,hand,gr,.3,981), seg(t+1.0,gr,hand,.4,981),
+            seg(t+1.4,hand,hand,.35,0), seg(t+1.75,hand,ct,1.0,981)];
+    G.ballVis=true; G.mode="play"; G.shots=2+Math.floor(rnd()*7);
     G.next={t:tc, who:G.server, c:ct, kind:"sv"};
   }
   function hit(t,who,c,kind){
@@ -1645,7 +2109,7 @@ function stGame(svg){
     for(let tries=0;tries<7&&!plan;tries++){
       let bx,by,v,g;
       if(kind==="sv"){
-        const side=Math.sign(c.y-ST_MID)*dir;   // del lado derecho del sacador → cruzado
+        const side=Math.sign(c.y-ST_MID)*dir;
         bx=ST_NET+dir*640*(.6+rnd()*.34); by=side>0?(dir>0?170+rnd()*340:577+rnd()*340):(dir>0?577+rnd()*340:170+rnd()*340);
         v=3300+rnd()*700; g=981;
       } else {
@@ -1666,11 +2130,11 @@ function stGame(svg){
     const b=plan.b;
     G.segs=[seg(t,c,b,plan.T1,plan.g)];
     if(winner){   // la pelota pasa, pica de nuevo y rueda hasta la pared
-      const p2=(k)=>{ const [x,y]=clampRun(b.x+plan.ux*plan.v2*k, b.y+plan.uy*plan.v2*k); return {x,y,z:0}; };
+      const p2=k=>{ const [x,y]=clampRun(b.x+plan.ux*plan.v2*k, b.y+plan.uy*plan.v2*k); return {x,y,z:0}; };
       const b2=p2(.55), b3=p2(.72), b4=p2(1.05);
       G.segs.push(seg(t+plan.T1,b,b2,.55,plan.g), seg(t+plan.T1+.55,b2,b3,.22,plan.g), seg(t+plan.T1+.77,b3,b4,.6,0));
       rp.stroke=null; rp.tx=rp.x+(plan.bd[0]-rp.x)*.6; rp.ty=rp.y+(plan.bd[1]-rp.y)*.6;
-      G.next=null; G.deadT=t+plan.T1+1.4;
+      G.next=null; G.deadT=t+plan.T1+1.4; G.pw=who;
     } else {
       G.segs.push(seg(t+plan.T1,b,plan.c2,plan.T2,plan.g));
       const tc=t+plan.T1+plan.T2;
@@ -1681,80 +2145,53 @@ function stGame(svg){
     hp.tx=who===0?-85:2462; hp.ty=ST_MID+(c.y-ST_MID)*.25; // recupera hacia el centro
     if(kind!=="sv") G.shots--;
   }
-  function drawPlayer(e,p,t,ball){
-    const ps=stPose(p,t), S=ST_S*(1+p.hop*.05);
-    e.root.setAttribute("transform",`translate(${p.x.toFixed(1)} ${p.y.toFixed(1)}) rotate(${p.face})`);
-    e.sc.setAttribute("transform",`scale(${S.toFixed(3)})`);
-    e.sh.setAttribute("transform",`translate(${(p.x+44+p.hop*18).toFixed(1)} ${(p.y+30+p.hop*12).toFixed(1)}) rotate(35)`);
-    // piernas: zancada según la velocidad, en el marco del cuerpo
-    const sp=Math.hypot(p.vx,p.vy), c=Math.cos(-p.face*rad), s=Math.sin(-p.face*rad);
-    let lx=1, ly=0; if(sp>5){ lx=(p.vx*c-p.vy*s)/sp; ly=(p.vx*s+p.vy*c)/sp; }
-    const amp=Math.min(1,sp/220)*15, sw=Math.sin(p.ph)*amp, wide=14+p.hop*4;
-    const fR=[4+lx*sw, wide+ly*sw], fL=[4-lx*sw, -wide-ly*sw];
-    const leg=(ln,sh,hy,f)=>{ ln.setAttribute("x1",0); ln.setAttribute("y1",hy); ln.setAttribute("x2",f[0].toFixed(1)); ln.setAttribute("y2",f[1].toFixed(1));
-      sh.setAttribute("transform",`translate(${(f[0]+4).toFixed(1)} ${f[1].toFixed(1)})`); };
-    leg(e.lgR,e.shR,8,fR); leg(e.lgL,e.shL,-8,fL);
-    // torso, brazos y raqueta
-    e.tor.setAttribute("transform",`rotate(${ps.tw.toFixed(1)})`);
-    const a=(ps.arm-ps.tw)*rad, dir=[Math.cos(a),Math.sin(a)], bh=p.stroke&&p.stroke.type==="bh";
-    const rs=[0,20], ls=[0,-20];
-    let hand;
-    if(ps.two){ const o=bh?ls:(p.stroke?rs:[0,0]), L=p.stroke?30:34; hand=[o[0]+dir[0]*L,o[1]+dir[1]*L];
-      e.arH.setAttribute("d",`M${rs} L${hand[0].toFixed(1)},${hand[1].toFixed(1)}`); e.arO.setAttribute("d",`M${ls} L${hand[0].toFixed(1)},${hand[1].toFixed(1)}`); }
-    else { hand=[rs[0]+dir[0]*30,rs[1]+dir[1]*30]; const oa=(ps.off-ps.tw)*rad, oh=[ls[0]+Math.cos(oa)*26,ls[1]+Math.sin(oa)*26];
-      e.arH.setAttribute("d",`M${rs} L${hand[0].toFixed(1)},${hand[1].toFixed(1)}`); e.arO.setAttribute("d",`M${ls} L${oh[0].toFixed(1)},${oh[1].toFixed(1)}`); }
-    e.rk.setAttribute("transform",`translate(${hand[0].toFixed(1)} ${hand[1].toFixed(1)}) rotate(${(ps.arm-ps.tw).toFixed(1)})`);
-    // la cabeza sigue a la pelota
-    let la=0; if(ball){ la=Math.atan2(ball.y-p.y,ball.x-p.x)/rad-p.face-ps.tw; la=((la+540)%360)-180; la=Math.max(-85,Math.min(85,la)); }
-    const lr=la*rad;
-    e.hr.setAttribute("cx",(-3.5*Math.cos(lr)).toFixed(1)); e.hr.setAttribute("cy",(-3.5*Math.sin(lr)).toFixed(1));
-    if(e.cp) e.cp.setAttribute("transform",`rotate(${la.toFixed(1)}) translate(10 0)`);
-  }
-  function draw(){
-    const t=G.t, ball=G.ballVis?ballAt(t):null;
-    P.forEach((p,k)=>drawPlayer(el[k],p,t,ball));
-    if(ball){
-      const R=12*(1+ball.z/800);
-      ballEl.setAttribute("cx",ball.x.toFixed(1)); ballEl.setAttribute("cy",ball.y.toFixed(1)); ballEl.setAttribute("r",R.toFixed(1));
-      shEl.setAttribute("cx",(ball.x+ST_SUN[0]*ball.z).toFixed(1)); shEl.setAttribute("cy",(ball.y+ST_SUN[1]*ball.z).toFixed(1));
-      G.trail.push(ball.x.toFixed(0)+","+ball.y.toFixed(0)); if(G.trail.length>7) G.trail.shift();
-      trail.setAttribute("points",G.trail.join(" ")); trail.setAttribute("stroke-width",(R*.9).toFixed(1));
-    }
-    const vis=ball?"":"hidden"; ballEl.style.visibility=vis; shEl.style.visibility=vis; trail.style.visibility=vis;
-  }
+  const move=(p,vm,ac,dt)=>{
+    const dx=p.tx-p.x, dy=p.ty-p.y, d=Math.hypot(dx,dy);
+    let wx=0, wy=0; if(d>2){ const s2=Math.min(vm,Math.sqrt(2*ac*d)*.9); wx=dx/d*s2; wy=dy/d*s2; }
+    let ax=wx-p.vx, ay=wy-p.vy; const am=Math.hypot(ax,ay), lim=ac*dt; if(am>lim&&am>0){ ax*=lim/am; ay*=lim/am; }
+    p.vx+=ax; p.vy+=ay; p.x+=p.vx*dt; p.y+=p.vy*dt; p.ph+=Math.hypot(p.vx,p.vy)*dt/24;
+  };
 
   servePositions(); P.forEach(p=>{ p.x=p.tx; p.y=p.ty; });
-  if(matchMedia("(prefers-reduced-motion: reduce)").matches){ G.ballVis=false; draw(); return; }
-  G.modeT=.6;
+  ST3D.server=G.server; ST3D_SB.draw(S,G.server);
+  if(ST3D.reduced){ ST3D.tick(0,0,P,K,G,ballAt); ST3D.render=()=>ST3D.tick(0,0,P,K,G,ballAt); return; }
+  G.modeT=.8;
   let last=performance.now();
   const frame=now=>{
-    const dt=Math.max(0,Math.min(.05,(now-last)/1000)); last=Math.max(last,now);
-    if(document.hidden||gate.style.display==="none"){ requestAnimationFrame(frame); return; }
+    requestAnimationFrame(frame);
+    const dt=Math.max(0,Math.min(.05,(now-last)/1000)); last=now;
+    if(document.hidden||gate.style.display==="none") return;
     G.t+=dt; const t=G.t;
-    if(G.mode==="walk"){   // entre puntos: caminan a sus posiciones y saca
+    if(G.mode==="walk"){
       const ok=P.every(p=>Math.hypot(p.tx-p.x,p.ty-p.y)<14&&Math.hypot(p.vx,p.vy)<25);
-      if(ok&&t>G.modeT) startServe(t);
+      if(ok&&t>G.modeT&&(!G.fetch||G.fetch.back)) startServe(t);
     }
     if(G.next&&t>=G.next.t){ const n=G.next; G.next=null; hit(t,n.who,n.c,n.kind); }
     if(G.mode==="play"&&!G.next&&G.deadT&&t>=G.deadT){
-      G.deadT=0; G.mode="walk"; G.modeT=t+2.2; G.point++; if(G.point%4===0) G.server=1-G.server;
-      setTimeout(()=>{ if(G.mode==="walk") G.ballVis=false; },700);   // un alcanzapelotas se la lleva
+      G.deadT=0; G.mode="walk"; G.modeT=t+2.4;
+      pointWon(G.pw); G.clapT=t; P[G.pw].cheerT=t;
+      const b=ballAt(t); let best=null, bd=1e9;
+      K.forEach(k=>{ if(k.pose!=="stand") return; const d=Math.hypot(k.x-b.x,k.y-b.y); if(d<bd){ bd=d; best=k; } });
+      if(best){ best.tx=b.x; best.ty=b.y; G.fetch={k:best,back:false}; } else G.ballVis=false;
       servePositions();
     }
+    if(G.fetch){ const f=G.fetch, k=f.k;
+      if(!f.back&&Math.hypot(k.x-k.tx,k.y-k.ty)<45){ f.back=true; G.ballVis=false; k.tx=k.home[0]; k.ty=k.home[1]; }
+      if(f.back&&Math.hypot(k.x-k.home[0],k.y-k.home[1])<25) G.fetch=null; }
     P.forEach(p=>{
-      const walk=G.mode==="walk", vm=walk?170:620, ac=walk?700:1700;
-      const dx=p.tx-p.x, dy=p.ty-p.y, d=Math.hypot(dx,dy);
-      let wx=0, wy=0; if(d>2){ const s2=Math.min(vm,Math.sqrt(2*ac*d)*.9); wx=dx/d*s2; wy=dy/d*s2; }
-      let ax=wx-p.vx, ay=wy-p.vy; const am=Math.hypot(ax,ay), lim=ac*dt; if(am>lim&&am>0){ ax*=lim/am; ay*=lim/am; }
-      p.vx+=ax; p.vy+=ay; p.x+=p.vx*dt; p.y+=p.vy*dt;
-      p.ph+=Math.hypot(p.vx,p.vy)*dt/40;
+      const walk=G.mode==="walk";
+      move(p,walk?170:620,walk?700:1700,dt);
+      const sp=Math.hypot(p.vx,p.vy);
+      turn(p,walk&&sp>60?Math.atan2(p.vy,p.vx)/ST_D:p.faceBase,dt,walk?5:12);
       const u=(t-p.hopT)/.28; p.hop=u>=0&&u<=1?Math.sin(Math.PI*u):0;
-      if(!walk&&!p.stroke&&Math.hypot(p.vx,p.vy)<40) p.hop=Math.max(p.hop,.25*Math.abs(Math.sin(t*7)));  // rebota en puntas de pie
+      if(!walk&&!p.stroke&&sp<40) p.hop=Math.max(p.hop,.25*Math.abs(Math.sin(t*7)));   // rebota en puntas de pie
       if(p.stroke&&t>p.stroke.tc+.8) p.stroke=null;
     });
-    draw(); requestAnimationFrame(frame);
+    K.forEach(k=>{ move(k,520,1800,dt); const sp=Math.hypot(k.vx,k.vy); turn(k,sp>60?Math.atan2(k.vy,k.vx)/ST_D:k.faceBase,dt,7); });
+    ST3D.tick(t,dt,P,K,G,ballAt);
   };
-  draw(); requestAnimationFrame(frame);
+  ST3D.tick(0,0,P,K,G,ballAt);
+  requestAnimationFrame(frame);
 }
 stInit();
 
