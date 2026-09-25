@@ -1922,7 +1922,7 @@ function stScoreboard(){
   const c=document.createElement("canvas"); c.width=640; c.height=240;
   const tex=new THREE.CanvasTexture(c); tex.encoding=THREE.sRGBEncoding; tex.anisotropy=4; tex.stKeep=true;
   const mat=new THREE.MeshBasicMaterial({map:tex,toneMapped:false}); mat.userData.keep=true;
-  const names=["M. ACOSTA","T. RÍOS"];
+  const names=["J. SINNER","C. ALCARAZ"];
   const draw=(S,server)=>{
     const V=VENUES[stKey()], g=c.getContext("2d"), pts=(a,b)=> a>=3&&b>=3 ? (a===b?"40":a>b?"AD":"40") : ["0","15","30","40"][Math.min(a,3)];
     g.fillStyle="#14224A"; g.fillRect(0,0,640,240); g.fillStyle="#24386E"; g.fillRect(0,0,640,54);
