@@ -3450,16 +3450,20 @@ function aTorneos(){
 /* Asistente guiado para crear un torneo: mismos datos que el resto del panel (nombre/categorías en aTorneos,
    inscriptos y sorteo en aSorteo), pero en 3 pasos lineales en vez de repartidos entre pestañas. */
 function wizSteps(cur){
-  const labels=["Datos","Inscriptos","Sorteo"];
+  const labels=["Datos","Inscriptos y sorteo"];
   return `<div class="wiz-steps">${labels.map((l,i)=>{ const n=i+1, done=n<cur, on=n===cur;
     return `<span class="step-chip${done?" ok":""}${on?" cur":""}">${done?"✓":n}. ${esc(l)}</span>`; }).join("")}</div>`;
 }
 function wizStep1(t,i,cs){
   return `<div class="block">
-    <div class="grid3">${F("Nombre",P(`torneos.${i}.nombre`),t.nombre)}${F("Etiqueta",P(`torneos.${i}.etiqueta`),t.etiqueta)}${F("Fechas",P(`torneos.${i}.fechas`),t.fechas)}</div>
-    <div class="grid3">${F("Año de realización",P(`torneos.${i}.anio`),t.anio,'inputmode="numeric" placeholder="2026"')}${S("Estado",P(`torneos.${i}.estado`),t.estado,[["Próximo","Próximo"],["En juego","En juego"],["Finalizado","Finalizado"]])}</div>
+    <div class="grid2">${F("Nombre",P(`torneos.${i}.nombre`),t.nombre)}${F("Fechas",P(`torneos.${i}.fechas`),t.fechas,'placeholder="Opcional"')}</div>
     <div class="f">Categorías de este torneo${cs.length?`<div class="checks">${cs.map(c=>`<label class="check"><input type="checkbox" data-tcats="${i}" value="${esc(c.id)}"${applies(t,c.id)?" checked":""} data-rerender>Cat. ${esc(c.nombre)}</label>`).join("")}</div>
-      <span class="hint" style="margin:0;font-weight:500">Ya están todas tildadas; destildá las que no juegan este torneo.</span>`:`<span class="hint" style="margin:0;font-weight:500">Todavía no hay categorías cargadas: creá al menos una en la pestaña Categorías y volvé a intentar.</span>`}</div>
+      <span class="hint" style="margin:0;font-weight:500">Ya están todas tildadas; destildá las que no juegan este torneo.</span>`:`
+      <p class="hint" style="margin:0;font-weight:500">Todavía no hay categorías cargadas. Escribilas acá (una por línea) y quedan disponibles para este y los próximos torneos.</p>
+      <div style="display:flex;flex-direction:column;gap:8px;margin-top:8px"><label class="f">Una por línea<textarea id="catBulk" placeholder="Primera\nSegunda\nTercera\nCuarta"></textarea></label>
+      <div><button type="button" class="btn ghost sm" data-act="add-c-bulk">Agregar categorías</button></div></div>`}</div>
+    <details><summary class="muted" style="cursor:pointer">Más opciones (etiqueta, año, estado)</summary>
+      <div class="grid3" style="margin-top:8px">${F("Etiqueta",P(`torneos.${i}.etiqueta`),t.etiqueta)}${F("Año de realización",P(`torneos.${i}.anio`),t.anio,'inputmode="numeric" placeholder="2026"')}${S("Estado",P(`torneos.${i}.estado`),t.estado,[["Próximo","Próximo"],["En juego","En juego"],["Finalizado","Finalizado"]])}</div></details>
   </div>`;
 }
 function wizCatTabs(t,cs,c,d){
@@ -3469,8 +3473,10 @@ function wizCatTabs(t,cs,c,d){
 function wizStep2(t,m,cs){
   if(!cs.length) return `<p class="muted" style="margin:0">Este torneo no tiene categorías (revisá el paso 1).</p>`;
   let c=state.adminRes.c; if(!cs.find(x=>x.id===c)) c=state.adminRes.c=cs[0].id;
-  const dobles=state.mod==="dobles", d=m, ins=inscList(d,t.id,c), n=ins.length;
-  return `<div class="block"><div class="block-head"><strong>Inscriptos · Cat. ${esc(catName(c,d))}</strong><span class="muted">${n?`${pagoCount(d,t.id,c)} de ${n} pagaron`:n}</span></div>
+  const dobles=state.mod==="dobles", d=m, ins=inscList(d,t.id,c), n=ins.length, sd=drawOf(d,t.id,c);
+  const size=n>=2?drawSizeFor(n):0, byes=size-n;
+  const pend=cs.filter(k=>!drawOf(d,t.id,k.id)&&inscList(d,t.id,k.id).length>=2&&inscList(d,t.id,k.id).length<=32);
+  const inscBlock=`<div class="block"><div class="block-head"><strong>Inscriptos · Cat. ${esc(catName(c,d))}</strong><span class="muted">${n?`${pagoCount(d,t.id,c)} de ${n} pagaron`:n}</span></div>
     ${wizCatTabs(t,cs,c,d)}
     <div class="insc-row"><label class="f">${dobles?"Agregar pareja (Perez, Juan / Lopez, Pedro)":"Agregar inscripto (Apellido, Nombre)"}<input id="inscNew" ${dobles?"":'list="dlPlayers" '}autocomplete="off" placeholder="${dobles?"Perez, Juan / Lopez, Pedro":"Apellido, Nombre"}"></label>
       <button type="button" class="btn" data-act="add-insc">${icon("plus")}Agregar</button>
@@ -3482,14 +3488,7 @@ function wizStep2(t,m,cs){
     ${ins.map((x,idx)=>`<tr><td class="muted">${idx+1}</td>${C(P(`inscritos.${t.id}.${c}.${idx}`),x,'style="min-width:230px"')}
       <td><label class="check" style="margin:0"><input type="checkbox" data-act="tog-pago" data-i="${idx}"${pagoOf(d,t.id,c,x)?" checked":""}></label></td>
       <td>${IB("del-insc",idx,"trash","Quitar inscripto")}</td></tr>`).join("")}
-    </tbody></table></div>`:`<p class="muted" style="margin:0">Todavía no hay inscriptos en esta categoría.</p>`}
-    <p class="hint" style="margin:0">Pasá por cada categoría de arriba antes de seguir al sorteo.</p></div>`;
-}
-function wizStep3(t,m,cs){
-  if(!cs.length) return `<p class="muted" style="margin:0">Este torneo no tiene categorías (revisá el paso 1).</p>`;
-  let c=state.adminRes.c; if(!cs.find(x=>x.id===c)) c=state.adminRes.c=cs[0].id;
-  const d=m, ins=inscList(d,t.id,c), n=ins.length, sd=drawOf(d,t.id,c);
-  const size=n>=2?drawSizeFor(n):0, byes=size-n;
+    </tbody></table></div>`:`<p class="muted" style="margin:0">Todavía no hay inscriptos en esta categoría.</p>`}</div>`;
   const controls=`<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
       <label class="check"><input type="checkbox" id="drawSeed"${state.drawSeed===true?" checked":""}>Cabezas de serie según el ranking (opcional)</label>
       <button type="button" class="btn" data-act="draw-auto">${sd?"Sortear de nuevo":"Sortear automáticamente"}</button>
@@ -3497,32 +3496,30 @@ function wizStep3(t,m,cs){
   let drawBlock;
   if(!sd){
     drawBlock=`<div class="block"><div class="block-head"><strong>Cuadro · Cat. ${esc(catName(c,d))}</strong></div>
-      ${wizCatTabs(t,cs,c,d)}
-      <p class="muted" style="margin:0">${n<2?"Cargá al menos 2 inscriptos en el paso anterior para poder sortear.":n>32?"El cuadro admite hasta 32 inscriptos.":`${n} inscriptos: cuadro de ${size}${byes?` con ${byes} BYE${byes>1?"s":""}`:""}, arranca en ${DRAW_ROUNDS[size][0]}.`}</p>
+      <p class="muted" style="margin:0">${n<2?"Cargá al menos 2 inscriptos arriba para poder sortear.":n>32?"El cuadro admite hasta 32 inscriptos.":`${n} inscriptos: cuadro de ${size}${byes?` con ${byes} BYE${byes>1?"s":""}`:""}, arranca en ${DRAW_ROUNDS[size][0]}.`}</p>
       ${controls}</div>`;
   } else {
     const dr=drawRounds(d,t.id,c,sd);
     drawBlock=`<div class="block"><div class="block-head"><strong>Cuadro de ${sd.slots.length} · Cat. ${esc(catName(c,d))}</strong><span class="muted">Arranca en ${esc(dr.rounds[0].name)}</span></div>
-      ${wizCatTabs(t,cs,c,d)}
       ${controls}
       <p class="hint" style="margin:0">El resto de los partidos se carga desde la pestaña Resultados, o cuando reabras este torneo desde Torneos.</p></div>`;
   }
-  return drawBlock;
+  return `${inscBlock}${drawBlock}${cs.length>1?`<div style="display:flex;justify-content:flex-end"><button type="button" class="btn ghost sm" data-act="draw-auto-all">Sortear todas las categorías pendientes${pend.length?` (${pend.length})`:""}</button></div>`:""}`;
 }
 function aWizard(){
   const wz=state.wizard, m=DM(), i=m.torneos.findIndex(x=>x.id===wz.tid), t=m.torneos[i];
   if(!t){ state.wizard=null; return aTorneos(); }
   const cs=tourCats(t,m);
-  const body = wz.step===1?wizStep1(t,i,m.categorias) : wz.step===2?wizStep2(t,m,cs) : wizStep3(t,m,cs);
+  const body = wz.step===1?wizStep1(t,i,m.categorias) : wizStep2(t,m,cs);
   return `<div class="panel wiz-panel">
     <div class="block-head"><h2 style="margin:0">Nuevo torneo${t.nombre&&t.nombre!=="Torneo nuevo"?`: ${esc(t.nombre)}`:""}</h2>
       <button type="button" class="btn ghost sm" data-act="wiz-exit">Salir del asistente</button></div>
     ${wizSteps(wz.step)}
-    <p class="hint" style="margin:0">${wz.step===1?"Nombre, fechas y qué categorías juegan este torneo.":wz.step===2?"Cargá los inscriptos de cada categoría (una por vez, con las pestañas de arriba).":"Sorteá el cuadro de cada categoría. Podés volver a este torneo después para cargar resultados."}</p>
+    <p class="hint" style="margin:0">${wz.step===1?"Nombre, fechas y qué categorías juegan este torneo.":"Cargá los inscriptos de cada categoría y sorteá el cuadro (una por vez, con las pestañas de arriba, o todas juntas con el botón de abajo)."}</p>
     ${body}
     <div style="display:flex;justify-content:space-between;gap:8px">
       ${wz.step>1?`<button type="button" class="btn ghost" data-act="wiz-prev">Atrás</button>`:"<span></span>"}
-      <button type="button" class="btn" data-act="${wz.step<3?"wiz-next":"wiz-finish"}">${wz.step<3?"Siguiente":"Terminar"}</button>
+      <button type="button" class="btn" data-act="${wz.step<2?"wiz-next":"wiz-finish"}">${wz.step<2?"Siguiente":"Terminar"}</button>
     </div>
   </div>`;
 }
@@ -3687,11 +3684,18 @@ function adminAction(act,el){
       Object.values(m.ranking).forEach(rows=>rows.forEach(r=>r.push(null)));
       state.wizard={tid:nid,step:1}; state.adminRes={t:nid,c:(m.categorias[0]||{}).id||""}; break; }
     case "wiz-prev": if(state.wizard&&state.wizard.step>1) state.wizard.step--; break;
-    case "wiz-next": if(state.wizard&&state.wizard.step<3) state.wizard.step++;
+    case "wiz-next": if(state.wizard&&state.wizard.step<2) state.wizard.step++;
       if(state.wizard&&state.wizard.step===2){ const cs=tourCats(m.torneos.find(x=>x.id===state.wizard.tid)||{},m);
         if(cs.length&&!cs.find(c=>c.id===state.adminRes.c)) state.adminRes.c=cs[0].id; } break;
     case "wiz-finish": case "wiz-exit": { const tid=state.wizard&&state.wizard.tid;
       state.wizard=null; if(tid) state.adminTab="torneos"; break; }
+    case "draw-auto-all": { const tid=state.wizard&&state.wizard.tid; if(!tid) return;
+      const tour=m.torneos.find(x=>x.id===tid); if(!tour) return;
+      const pend=tourCats(tour,m).filter(k=>!drawOf(m,tid,k.id)&&inscList(m,tid,k.id).length>=2&&inscList(m,tid,k.id).length<=32);
+      if(!pend.length){ toast("No hay categorías pendientes: revisá que tengan entre 2 y 32 inscriptos y todavía no tengan cuadro"); return; }
+      m.sorteos=m.sorteos||{}; m.sorteos[tid]=m.sorteos[tid]||{};
+      pend.forEach(k=>{ m.sorteos[tid][k.id]={slots:makeDraw(m,tour,k.id,inscList(m,tid,k.id),false)}; });
+      toast(`Se sorteó${pend.length===1?"":"n"} ${pend.length} categoría${pend.length===1?"":"s"}`); break; }
     case "dup-t": { const src=m.torneos[n]; if(!src) return; const f={};
       (src.cats||m.categorias.map(c=>c.id)).forEach(cid=>f[cid]={champ:"",fin:""});
       const nid="t"+Date.now().toString(36), ny=curYear()!=="todos"?curYear():String((+src.anio||new Date().getFullYear())+1);

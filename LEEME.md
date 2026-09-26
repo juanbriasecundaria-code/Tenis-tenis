@@ -1,16 +1,10 @@
-# Circuito Tenis — asistente para crear torneo
+# Circuito Tenis — asistente para crear torneo (v2, más simple)
 
-## Qué cambió
-Se agregó un asistente guiado ("Crear torneo") en el panel de administración, en la pestaña Torneos. En vez de tener que ir por separado a Categorías, Torneos, Inscriptos y sorteo, el asistente lleva al organizador por 3 pasos en una sola pantalla:
-
-1. **Datos**: nombre, etiqueta, fechas, año, estado y qué categorías juegan este torneo (vienen todas tildadas por defecto).
-2. **Inscriptos**: cargar los anotados de cada categoría (con pestañas para pasar de una a otra), igual que antes.
-3. **Sorteo**: sortear el cuadro de cada categoría con el mismo botón de siempre.
-
-Se puede salir del asistente en cualquier momento ("Salir del asistente") sin perder lo cargado, y "Agregar torneo vacío (sin asistente)" sigue disponible para quien prefiera el flujo manual de antes. No se tocó la lógica de sorteo, inscriptos, ranking ni Firebase: es la misma, solo agrupada en una pantalla.
+## Qué cambió en esta vuelta
+- El asistente pasó de 3 pasos a **2**: "Datos" y "Inscriptos y sorteo". Ya no hay que salir de la categoría que estás cargando para sortearla: inscriptos y cuadro están juntos, uno debajo del otro.
+- Botón **"Sortear todas las categorías pendientes"**: sortea de una sola vez todas las categorías del torneo que ya tengan 2 o más inscriptos y todavía no tengan cuadro (nunca pisa un cuadro ya sorteado).
+- Si el club todavía no cargó ninguna categoría, el Paso 1 ahora deja pegarlas ahí mismo (una por línea), sin salir del asistente.
+- El Paso 1 quedó con solo 3 campos a la vista: Nombre, Fechas y Categorías. Etiqueta, Año y Estado se movieron a "Más opciones" (colapsado), porque casi nunca hace falta tocarlos.
 
 ## Cómo usar esta versión
-Subí el contenido completo de la carpeta a tu alojamiento habitual (no alcanza con reemplazar solo el HTML: incluye `vendor/`, `assets/`, manifest e íconos, igual que la versión anterior).
-
-## Pendiente / a tener en cuenta
-Si el club todavía no cargó ninguna categoría, el paso 1 lo va a avisar: primero hay que crear al menos una categoría desde la pestaña Categorías (es un paso único, no por torneo).
+Subí el contenido completo de la carpeta a tu alojamiento habitual (no alcanza con reemplazar solo el HTML: incluye `vendor/`, `assets/`, manifest e íconos).
