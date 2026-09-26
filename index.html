@@ -284,6 +284,9 @@ table.rank{width:100%;border-collapse:collapse}
 .pclub-logo{width:15px;height:15px;border-radius:50%;object-fit:cover;flex:none}
 .pclub-logo-ph{display:grid;place-items:center;color:#fff;font-weight:800;font-stretch:70%;font-size:.55rem}
 .pc-club-edit{max-width:280px;margin-top:14px}
+.pc-contact-edit{max-width:320px;margin-top:14px;display:flex;flex-direction:column;gap:10px}
+.pc-contact-hint{color:var(--muted);font-size:.82rem;margin:0}
+.pc-contact.where-social{margin-top:14px}
 .rank .star{color:var(--gold);margin-left:4px;font-size:.85rem}
 .rank .total{font-stretch:75%;font-weight:900;font-size:1.35rem;font-variant-numeric:tabular-nums;text-align:right;padding-right:18px}
 .pos{display:inline-grid;place-items:center;width:2rem;height:2rem;border-radius:50%;font-weight:800;font-variant-numeric:tabular-nums;font-size:.95rem}
@@ -2407,7 +2410,7 @@ const DEFAULT_DATA = {
   },
   novedades:[],
   fotos:[],
-  jugadores:{}, // foto de cada jugador: { "Apellido, Nombre": {foto:"data:..."} }, es independiente de singles/dobles
+  jugadores:{}, // datos de cada jugador: { "Apellido, Nombre": {foto:"data:...", club:"...", contacto:{whatsapp:"",instagram:""}} }, es independiente de singles/dobles
   modalidades:{
     "singles-hombres":emptyModalidad(),
     "singles-damas":emptyModalidad(),
@@ -2638,6 +2641,7 @@ function findPlayer(name){
   return null;
 }
 function playerFoto(name){ return (data.jugadores&&data.jugadores[name]&&data.jugadores[name].foto)||""; }
+function playerContacto(name){ return (data.jugadores&&data.jugadores[name]&&data.jugadores[name].contacto)||{}; }
 /* El Circuito Abierto junta jugadores de varios clubes. Para mostrar el club (y su escudo) de cada
    uno junto al nombre SIN que nadie lo tenga que cargar a mano, se arma un índice automático:
    se bajan una vez los datos (torneos/ranking) de los demás clubes y se busca en qué club aparece
@@ -3137,12 +3141,25 @@ function vPartidos(){
   const canClub = isCircuitoClub() && (state.admin || isProfile);
   const clubEdit = canClub ? `<label class="f pc-club-edit">Club (se detecta solo; corregilo si hace falta)<input id="pJugadorClub" list="clubOptsDl" autocomplete="off" placeholder="Club de origen" value="${esc(playerClub(p.name))}"></label>
       <datalist id="clubOptsDl">${clubNameOptions().map(n=>`<option value="${esc(n)}">`).join("")}</datalist>` : "";
+  /* Contacto del jugador (WhatsApp/Instagram): lo carga el propio jugador (o el admin) desde
+     su perfil, y se lo muestra a los demás como enlaces para que se organicen para pelotear. */
+  const contacto = playerContacto(p.name);
+  const canContact = state.admin || isProfile;
+  const contactoEdit = canContact ? `<div class="pc-contact-edit">
+      <label class="f">WhatsApp<input id="pJugadorWhatsapp" autocomplete="off" placeholder="número con código de área, ej. 5492324123456" value="${esc(contacto.whatsapp||"")}"></label>
+      <label class="f">Instagram<input id="pJugadorInstagram" autocomplete="off" placeholder="@usuario o link" value="${esc(contacto.instagram||"")}"></label>
+      <p class="pc-contact-hint">Así los demás jugadores te pueden escribir para organizar un partido.</p>
+    </div>` : "";
+  const contactoLinks = [["whatsapp","WhatsApp",contacto.whatsapp],["instagram","Instagram",contacto.instagram]]
+    .map(([k,l,v])=>({l,ic:k,href:redHref(k,v)})).filter(r=>r.href);
+  const contactoView = (!canContact && contactoLinks.length) ? `<div class="pc-contact where-social"><span class="lbl">Contacto</span>${contactoLinks.map(r=>`<a class="soc" href="${esc(r.href)}" target="_blank" rel="noopener noreferrer">${icon(r.ic)}${r.l}</a>`).join("")}</div>` : "";
   return `<section class="wrap page"><div class="page-tools">${yearSel()}</div>
     <div class="pcard"><div class="pc-main">
         <h1 class="display">${esc(s.ap)}</h1><span class="sub">${esc(s.nom)}${s.nom?", ":""}Categoría ${esc(catName(p.cat))}${modNote()}${isProfile?' <span class="me-tag">Tu perfil</span>':""}${clubInfo?` <span class="pclub">${miniShieldHTML(clubInfo)}</span>`:""}</span>
       <div class="pc-actions">${isProfile?`<button class="btn ghost sm" data-act="unprofile">Dejar de usar como mi perfil</button>`
         :`<button class="btn sm" data-act="profile">Guardar como mi perfil</button>`}<button class="btn ghost sm" data-act="pick">Elegir ${otroJugador()}</button></div>
       ${clubEdit}
+      ${contactoEdit}${contactoView}
       ${pcTable}</div>
       <div class="pc-media"${mediaStyle}>${foto?"":`<span class="pc-media-ph" style="background:${clubColor(p.name)}">${initials(s.ap)}</span>`}${fotoAdmin}</div></div>
     ${stats}<h2 class="round-label">Temporada</h2><div class="tracks">${tracks||'<p class="muted">Sin torneos todavía.</p>'}</div>${mlist}${h2hHTML(p.name)}</section>`;
@@ -4506,6 +4523,16 @@ document.addEventListener("change",async e=>{
     if(!data.jugadores) data.jugadores={};
     data.jugadores[name]={...(data.jugadores[name]||{}),club:el.value.trim()};
     if(saveData()){ if(state.draft) state.draft=clone(data); } 
+    render(); return;
+  }
+  if(id==="pJugadorWhatsapp"||id==="pJugadorInstagram"){
+    const name=state.picking?"":(state.view||state.profile); if(!name) return;
+    if(!(state.admin||state.profile===name)) return;
+    if(!data.jugadores) data.jugadores={};
+    const prevContacto=(data.jugadores[name]&&data.jugadores[name].contacto)||{};
+    const campo=id==="pJugadorWhatsapp"?"whatsapp":"instagram";
+    data.jugadores[name]={...(data.jugadores[name]||{}),contacto:{...prevContacto,[campo]:el.value.trim()}};
+    if(saveData()){ if(state.draft) state.draft=clone(data); toast("Contacto actualizado"); } else toast("No se pudo guardar el contacto");
     render(); return;
   }
   if(id==="upFotos"&&el.files.length){ syncDraft(); let ok=0;
