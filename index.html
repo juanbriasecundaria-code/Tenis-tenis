@@ -3456,7 +3456,13 @@ function wizSteps(cur){
 }
 function wizStep1(t,i,cs){
   return `<div class="block">
-    <div class="grid2">${F("Nombre",P(`torneos.${i}.nombre`),t.nombre)}${F("Fechas",P(`torneos.${i}.fechas`),t.fechas,'placeholder="Opcional"')}</div>
+    <div class="grid2">${F("Nombre",P(`torneos.${i}.nombre`),t.nombre)}
+      <div class="f">Fechas<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+        <input type="date" id="wizFDesde" aria-label="Desde" value="${esc(t.fDesde||"")}">
+        <span class="muted" style="font-size:.85em">al</span>
+        <input type="date" id="wizFHasta" aria-label="Hasta" value="${esc(t.fHasta||"")}">
+      </div></div></div>
+    <label class="f">Texto de fechas (se completa solo al elegir arriba; también lo podés escribir a mano)<input data-bind="${P(`torneos.${i}.fechas`)}" id="wizFechasTxt" value="${esc(t.fechas)}" placeholder="Opcional"></label>
     <div class="f">Categorías de este torneo${cs.length?`<div class="checks">${cs.map(c=>`<label class="check"><input type="checkbox" data-tcats="${i}" value="${esc(c.id)}"${applies(t,c.id)?" checked":""} data-rerender>Cat. ${esc(c.nombre)}</label>`).join("")}</div>
       <span class="hint" style="margin:0;font-weight:500">Ya están todas tildadas; destildá las que no juegan este torneo.</span>`:`
       <p class="hint" style="margin:0;font-weight:500">Todavía no hay categorías cargadas. Escribilas acá (una por línea) y quedan disponibles para este y los próximos torneos.</p>
@@ -3480,7 +3486,8 @@ function wizStep2(t,m,cs){
     ${cs.length>1?wizCatTabs(t,cs,c,d):""}
     <div class="insc-row"><label class="f">${dobles?"Agregar pareja (Perez, Juan / Lopez, Pedro)":"Agregar inscripto (Apellido, Nombre)"}<input id="inscNew" ${dobles?"":'list="dlPlayers" '}autocomplete="off" placeholder="${dobles?"Perez, Juan / Lopez, Pedro":"Apellido, Nombre"}"></label>
       <button type="button" class="btn" data-act="add-insc">${icon("plus")}Agregar</button>
-      ${dobles?"":`<button type="button" class="btn ghost" data-act="insc-from-rank">Traer los del ranking de la categoría</button>`}</div>
+      ${dobles?"":`<button type="button" class="btn ghost" data-act="insc-from-rank">Traer los del ranking de la categoría</button>`}
+      ${m.torneos.length>1?`<button type="button" class="btn ghost" data-act="insc-from-prev">Traer los del torneo anterior</button>`:""}</div>
     <details><summary class="muted" style="cursor:pointer">Pegar varios a la vez</summary>
       <div style="display:flex;flex-direction:column;gap:8px;margin-top:8px"><label class="f">Uno por línea<textarea id="inscBulk" placeholder="${dobles?"Perez, Juan / Lopez, Pedro\nGomez, Ana / Ruiz, Sol":"Perez, Juan\nGomez, Luis"}"></textarea></label>
       <div><button type="button" class="btn ghost sm" data-act="add-insc-bulk">Agregar la lista</button></div></div></details>
@@ -3488,7 +3495,8 @@ function wizStep2(t,m,cs){
     ${ins.map((x,idx)=>`<tr><td class="muted">${idx+1}</td>${C(P(`inscritos.${t.id}.${c}.${idx}`),x,'style="min-width:230px"')}
       <td><label class="check" style="margin:0"><input type="checkbox" data-act="tog-pago" data-i="${idx}"${pagoOf(d,t.id,c,x)?" checked":""}></label></td>
       <td>${IB("del-insc",idx,"trash","Quitar inscripto")}</td></tr>`).join("")}
-    </tbody></table></div>`:`<p class="muted" style="margin:0">Todavía no hay inscriptos en esta categoría.</p>`}</div>`;
+    </tbody></table></div>`:`<p class="muted" style="margin:0">Todavía no hay inscriptos en esta categoría.</p>`}
+    ${cs.length>1?`<div style="display:flex;justify-content:flex-end"><button type="button" class="btn ghost sm" data-act="next-cat-sin-insc">Siguiente categoría sin inscriptos ›</button></div>`:""}</div>`;
   const controls=`<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
       <label class="check"><input type="checkbox" id="drawSeed"${state.drawSeed===true?" checked":""}>Cabezas de serie según el ranking (opcional)</label>
       <button type="button" class="btn" data-act="draw-auto">${sd?"Sortear de nuevo":"Sortear automáticamente"}</button>
@@ -3680,7 +3688,6 @@ function adminAction(act,el){
       Object.values(m.ranking).forEach(rows=>rows.forEach(r=>r.push(null))); break; }
     case "wiz-new": { const f={}; m.categorias.forEach(c=>f[c.id]={champ:"",fin:""});
       const nid="t"+Date.now().toString(36), ny=curYear()!=="todos"?curYear():String(new Date().getFullYear());
-      const MESES=["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre"];
       const sugName=`Torneo de ${MESES[new Date().getMonth()]} ${ny}`;
       m.torneos.push({anio:ny,cats:m.categorias.map(c=>c.id),id:nid,etiqueta:`${m.torneos.length+1}.º torneo`,nombre:sugName,fechas:"",estado:"Próximo",finales:f});
       Object.values(m.ranking).forEach(rows=>rows.forEach(r=>r.push(null)));
@@ -3718,17 +3725,28 @@ function adminAction(act,el){
       if(y==="todos"){ const v=adminOrder(m,c); swap(rows,v[n],v[to]); }
       else { const names=adminOrder(m,c).map(g=>rows[g][0]); swap(names,n,to); m.desempate=m.desempate||{}; m.desempate[y]=m.desempate[y]||{}; m.desempate[y][c]=names; }
       break; }
-    case "add-insc": case "add-insc-bulk": case "insc-from-rank": {
+    case "add-insc": case "add-insc-bulk": case "insc-from-rank": case "insc-from-prev": {
       const {t,c}=state.adminRes; if(!t||!c) return;
-      let names=[];
+      let names=[], prevName="";
       if(act==="add-insc"){ const inp=document.getElementById("inscNew"); names=[inp?inp.value:""]; }
       else if(act==="add-insc-bulk"){ const ta=document.getElementById("inscBulk"); names=String(ta?ta.value:"").split(/\r?\n/); }
-      else names=(m.ranking[c]||[]).map(r=>r[0]);
+      else if(act==="insc-from-rank") names=(m.ranking[c]||[]).map(r=>r[0]);
+      else { // insc-from-prev: trae la lista del torneo anterior que haya tenido inscriptos en esta misma categoría
+        const idx=m.torneos.findIndex(x=>x.id===t);
+        for(let k=idx-1;k>=0;k--){ if(inscList(m,m.torneos[k].id,c).length){ names=inscList(m,m.torneos[k].id,c).slice(); prevName=m.torneos[k].nombre||""; break; } }
+      }
       names=names.map(x=>String(x||"").trim()).filter(Boolean);
-      if(!names.length){ toast(act==="insc-from-rank"?"El ranking de esta categoría está vacío":"Escribí un nombre"); return; }
+      if(!names.length){ toast(act==="insc-from-rank"?"El ranking de esta categoría está vacío":act==="insc-from-prev"?"No encontré un torneo anterior con inscriptos en esta categoría":"Escribí un nombre"); return; }
       const r=inscAdd(m,t,c,names);
-      toast(r.added?`${r.added===1?"Se agregó 1 inscripto":"Se agregaron "+r.added+" inscriptos"}${r.dup?` (${r.dup} ya ${r.dup===1?"estaba":"estaban"})`:""}`:"Ya estaban inscriptos");
+      toast(r.added?`${r.added===1?"Se agregó 1 inscripto":"Se agregaron "+r.added+" inscriptos"}${prevName?` de "${prevName}"`:""}${r.dup?` (${r.dup} ya ${r.dup===1?"estaba":"estaban"})`:""}`:"Ya estaban inscriptos");
       render(); const inp=document.getElementById("inscNew"); if(inp&&act==="add-insc") inp.focus(); return; }
+    case "next-cat-sin-insc": {
+      const {t,c}=state.adminRes; const tour=m.torneos.find(x=>x.id===t); if(!tour) return;
+      const cs=tourCats(tour,m), idx=cs.findIndex(x=>x.id===c);
+      const order=[...cs.slice(idx+1),...cs.slice(0,idx+1)];
+      const next=order.find(k=>inscList(m,t,k.id).length===0);
+      if(!next){ toast("Todas las categorías ya tienen inscriptos"); return; }
+      state.adminRes.c=next.id; break; }
     case "del-insc": { const {t,c}=state.adminRes, l=inscList(m,t,c); l.splice(n,1); break; }
     case "tog-pago": { const {t,c}=state.adminRes, l=inscList(m,t,c); if(l[n]!=null) pagoToggle(m,t,c,l[n]); break; }
     case "draw-auto": case "draw-blank": { const {t,c}=state.adminRes, tour=m.torneos.find(x=>x.id===t), ins=inscList(m,t,c);
@@ -4197,7 +4215,8 @@ function aSorteo(){
     <div class="block"><div class="block-head"><strong>Inscriptos · Cat. ${esc(catName(c,d))}</strong><span class="muted">${n?`${pagoCount(d,t,c)} de ${n} pagaron`:n}</span></div>
       <div class="insc-row"><label class="f">${dobles?"Agregar pareja (Perez, Juan / Lopez, Pedro)":"Agregar inscripto (Apellido, Nombre)"}<input id="inscNew" ${dobles?"":'list="dlPlayers" '}autocomplete="off" placeholder="${dobles?"Perez, Juan / Lopez, Pedro":"Apellido, Nombre"}"></label>
         <button type="button" class="btn" data-act="add-insc">${icon("plus")}Agregar</button>
-        ${dobles?"":`<button type="button" class="btn ghost" data-act="insc-from-rank">Traer los del ranking de la categoría</button>`}</div>
+        ${dobles?"":`<button type="button" class="btn ghost" data-act="insc-from-rank">Traer los del ranking de la categoría</button>`}
+        ${d.torneos.length>1?`<button type="button" class="btn ghost" data-act="insc-from-prev">Traer los del torneo anterior</button>`:""}</div>
       <details><summary class="muted" style="cursor:pointer">Pegar varios a la vez</summary>
         <div style="display:flex;flex-direction:column;gap:8px;margin-top:8px"><label class="f">Uno por línea<textarea id="inscBulk" placeholder="${dobles?"Perez, Juan / Lopez, Pedro\nGomez, Ana / Ruiz, Sol":"Perez, Juan\nGomez, Luis"}"></textarea></label>
         <div><button type="button" class="btn ghost sm" data-act="add-insc-bulk">Agregar la lista</button></div></div></details>
@@ -4205,7 +4224,8 @@ function aSorteo(){
       ${ins.map((x,i)=>`<tr><td class="muted">${i+1}</td>${C(P(`inscritos.${t}.${c}.${i}`),x,'style="min-width:230px"')}<td class="muted">${pts(x)}</td>
         <td><label class="check" style="margin:0"><input type="checkbox" data-act="tog-pago" data-i="${i}"${pagoOf(d,t,c,x)?" checked":""}></label></td>
         <td>${IB("del-insc",i,"trash","Quitar inscripto")}</td></tr>`).join("")}
-      </tbody></table></div>`:`<p class="muted" style="margin:0">Todavía no hay inscriptos en esta categoría.</p>`}</div>
+      </tbody></table></div>`:`<p class="muted" style="margin:0">Todavía no hay inscriptos en esta categoría.</p>`}
+      ${cs.length>1?`<div style="display:flex;justify-content:flex-end"><button type="button" class="btn ghost sm" data-act="next-cat-sin-insc">Siguiente categoría sin inscriptos ›</button></div>`:""}</div>
     ${drawBlock}</div>`;
 }
 /* Ganador y score de un partido cargados desde el sorteo: se guardan en Resultados, así el resto del sitio los ve igual que siempre. */
@@ -4241,6 +4261,19 @@ function drawSetResult(el){
 const SCR = {i:0,t:0,secs:15,paused:false,timer:null,wake:null};
 const norm = s => String(s||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase();
 const DIAS_ES = ["domingo","lunes","martes","miercoles","jueves","viernes","sabado"];
+const MESES = ["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre"];
+/* Arma un texto de fechas legible ("12 al 14 de octubre") a partir de dos <input type=date> (o uno solo). */
+function fechaRango(a,b){
+  if(!a&&!b) return "";
+  if(!a) a=b; if(!b) b=a;
+  if(a>b){ const t=a; a=b; b=t; }
+  const pa=a.split("-").map(Number), pb=b.split("-").map(Number), hoy=new Date().getFullYear();
+  const ysuf=y=>y!==hoy?` de ${y}`:"";
+  if(a===b) return `${pa[2]} de ${MESES[pa[1]-1]}${ysuf(pa[0])}`;
+  if(pa[0]===pb[0]&&pa[1]===pb[1]) return `${pa[2]} al ${pb[2]} de ${MESES[pa[1]-1]}${ysuf(pa[0])}`;
+  if(pa[0]===pb[0]) return `${pa[2]} de ${MESES[pa[1]-1]} al ${pb[2]} de ${MESES[pb[1]-1]}${ysuf(pa[0])}`;
+  return `${pa[2]} de ${MESES[pa[1]-1]} de ${pa[0]} al ${pb[2]} de ${MESES[pb[1]-1]} de ${pb[0]}`;
+}
 const chunk = (a,n) => { const o=[]; for(let i=0;i<a.length;i+=n) o.push(a.slice(i,i+n)); return o; };
 function schedTag(h){
   const key=h.mod||"singles-hombres", m=data.modalidades[key], c=m&&m.categorias.find(x=>x.id===h.cat);
@@ -4445,6 +4478,11 @@ document.addEventListener("input",e=>{
 });
 document.addEventListener("change",async e=>{
   const el=e.target, id=el.id;
+  if(id==="wizFDesde"||id==="wizFHasta"){ syncDraft();
+    const wz=state.wizard; if(!wz) return; const m=DM(), t=m.torneos.find(x=>x.id===wz.tid); if(!t) return;
+    t.fDesde=document.getElementById("wizFDesde").value; t.fHasta=document.getElementById("wizFHasta").value;
+    const auto=fechaRango(t.fDesde,t.fHasta); if(auto) t.fechas=auto;
+    render(); return; }
   if(el.hasAttribute("data-yearsel")){ if(state.draft) syncDraft(); state.anio=el.value; store.set("anio",el.value); state.closedTours=null; state.round=0; render(); return; }
   if(el.hasAttribute("data-rerender")){ syncDraft(); render(); return; }
   if(el.dataset&&(el.dataset.dwin!=null||el.dataset.dscore!=null)){ syncDraft(); drawSetResult(el); render(); return; }
