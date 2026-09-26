@@ -2527,7 +2527,6 @@ function saveData(){
   /* Doble candado: solo se escribe si hay un club abierto y si lo que está en memoria
      pertenece a ese mismo club. Evita que una edición vieja se guarde encima de otro club. */
   if(!CLUB_ID){ toast("No hay ningún club abierto: no se guardó nada."); return false; }
-  if(state && state.rol==="jugador"){ return false; } // modo jugador: solo lectura
   if(DATA_OWNER && DATA_OWNER!==CLUB_ID){ toast("Los datos cargados son de otro club: no se guardó nada."); return false; }
   if(!store.set("data5",JSON.stringify(data))){ toast("No se pudo guardar: el navegador se quedó sin espacio. Probá con menos fotos."); return false; }
   DATA_OWNER = CLUB_ID;
