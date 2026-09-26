@@ -3467,8 +3467,8 @@ function wizStep1(t,i,cs){
   </div>`;
 }
 function wizCatTabs(t,cs,c,d){
-  return `<div class="scroll-x"><div class="seg" role="group" aria-label="Categoría">${cs.map(k=>{ const q=inscList(d,t.id,k.id).length;
-    return `<button type="button" data-sorcat="${esc(k.id)}" aria-pressed="${k.id===c}">Cat. ${esc(k.nombre)}${q?`<span class="cnt">${q}</span>`:""}</button>`; }).join("")}</div></div>`;
+  return `<div class="scroll-x"><div class="seg" role="group" aria-label="Categoría">${cs.map(k=>{ const q=inscList(d,t.id,k.id).length, ready=!!drawOf(d,t.id,k.id);
+    return `<button type="button" data-sorcat="${esc(k.id)}" aria-pressed="${k.id===c}">${ready?"✓ ":""}Cat. ${esc(k.nombre)}${q?`<span class="cnt">${q}</span>`:""}</button>`; }).join("")}</div></div>`;
 }
 function wizStep2(t,m,cs){
   if(!cs.length) return `<p class="muted" style="margin:0">Este torneo no tiene categorías (revisá el paso 1).</p>`;
@@ -3477,7 +3477,7 @@ function wizStep2(t,m,cs){
   const size=n>=2?drawSizeFor(n):0, byes=size-n;
   const pend=cs.filter(k=>!drawOf(d,t.id,k.id)&&inscList(d,t.id,k.id).length>=2&&inscList(d,t.id,k.id).length<=32);
   const inscBlock=`<div class="block"><div class="block-head"><strong>Inscriptos · Cat. ${esc(catName(c,d))}</strong><span class="muted">${n?`${pagoCount(d,t.id,c)} de ${n} pagaron`:n}</span></div>
-    ${wizCatTabs(t,cs,c,d)}
+    ${cs.length>1?wizCatTabs(t,cs,c,d):""}
     <div class="insc-row"><label class="f">${dobles?"Agregar pareja (Perez, Juan / Lopez, Pedro)":"Agregar inscripto (Apellido, Nombre)"}<input id="inscNew" ${dobles?"":'list="dlPlayers" '}autocomplete="off" placeholder="${dobles?"Perez, Juan / Lopez, Pedro":"Apellido, Nombre"}"></label>
       <button type="button" class="btn" data-act="add-insc">${icon("plus")}Agregar</button>
       ${dobles?"":`<button type="button" class="btn ghost" data-act="insc-from-rank">Traer los del ranking de la categoría</button>`}</div>
@@ -3512,7 +3512,7 @@ function aWizard(){
   const cs=tourCats(t,m);
   const body = wz.step===1?wizStep1(t,i,m.categorias) : wizStep2(t,m,cs);
   return `<div class="panel wiz-panel">
-    <div class="block-head"><h2 style="margin:0">Nuevo torneo${t.nombre&&t.nombre!=="Torneo nuevo"?`: ${esc(t.nombre)}`:""}</h2>
+    <div class="block-head"><h2 style="margin:0">Nuevo torneo: ${esc(t.nombre||"sin nombre")}</h2>
       <button type="button" class="btn ghost sm" data-act="wiz-exit">Salir del asistente</button></div>
     ${wizSteps(wz.step)}
     <p class="hint" style="margin:0">${wz.step===1?"Nombre, fechas y qué categorías juegan este torneo.":"Cargá los inscriptos de cada categoría y sorteá el cuadro (una por vez, con las pestañas de arriba, o todas juntas con el botón de abajo)."}</p>
@@ -3680,15 +3680,22 @@ function adminAction(act,el){
       Object.values(m.ranking).forEach(rows=>rows.forEach(r=>r.push(null))); break; }
     case "wiz-new": { const f={}; m.categorias.forEach(c=>f[c.id]={champ:"",fin:""});
       const nid="t"+Date.now().toString(36), ny=curYear()!=="todos"?curYear():String(new Date().getFullYear());
-      m.torneos.push({anio:ny,cats:m.categorias.map(c=>c.id),id:nid,etiqueta:`${m.torneos.length+1}.º torneo`,nombre:"Torneo nuevo",fechas:"",estado:"Próximo",finales:f});
+      const MESES=["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre"];
+      const sugName=`Torneo de ${MESES[new Date().getMonth()]} ${ny}`;
+      m.torneos.push({anio:ny,cats:m.categorias.map(c=>c.id),id:nid,etiqueta:`${m.torneos.length+1}.º torneo`,nombre:sugName,fechas:"",estado:"Próximo",finales:f});
       Object.values(m.ranking).forEach(rows=>rows.forEach(r=>r.push(null)));
       state.wizard={tid:nid,step:1}; state.adminRes={t:nid,c:(m.categorias[0]||{}).id||""}; break; }
     case "wiz-prev": if(state.wizard&&state.wizard.step>1) state.wizard.step--; break;
     case "wiz-next": if(state.wizard&&state.wizard.step<2) state.wizard.step++;
       if(state.wizard&&state.wizard.step===2){ const cs=tourCats(m.torneos.find(x=>x.id===state.wizard.tid)||{},m);
         if(cs.length&&!cs.find(c=>c.id===state.adminRes.c)) state.adminRes.c=cs[0].id; } break;
-    case "wiz-finish": case "wiz-exit": { const tid=state.wizard&&state.wizard.tid;
-      state.wizard=null; if(tid) state.adminTab="torneos"; break; }
+    case "wiz-finish": {
+      Object.values(d.modalidades).forEach(mm=>Object.values(mm.resultados).forEach(tc=>Object.keys(tc).forEach(c=>{
+        tc[c]=tc[c].map(r=>({name:r.name,m:r.m.filter(x=>x[0]||x[1])})); })));
+      const prev=data; data=normalize(clone(d));
+      if(saveData()){ toast("Torneo guardado"); state.wizard=null; state.adminTab="torneos"; } else data=prev;
+      break; }
+    case "wiz-exit": state.wizard=null; state.adminTab="torneos"; break;
     case "draw-auto-all": { const tid=state.wizard&&state.wizard.tid; if(!tid) return;
       const tour=m.torneos.find(x=>x.id===tid); if(!tour) return;
       const pend=tourCats(tour,m).filter(k=>!drawOf(m,tid,k.id)&&inscList(m,tid,k.id).length>=2&&inscList(m,tid,k.id).length<=32);
