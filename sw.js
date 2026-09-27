@@ -3,9 +3,9 @@
    - Íconos, manifest y tipografías: se guardan y se actualizan solos.
    - Firebase/Firestore NO se toca: los datos se siguen sincronizando por su cuenta.
    Cuando cambies este archivo, subí el número de VERSION para limpiar lo guardado. */
-const VERSION = "v8-reference-layouts";
+const VERSION = "v9-official-logos";
 const CACHE = "torneos-" + VERSION;
-const PRECACHE = ["./", "vendor/three-r128.min.js", "stadium-realism.js", "assets/spectators-photo.png", "assets/athlete-skin.png", "assets/crowd-summer.webp", "assets/crowd-wimb.webp", "assets/crowd-usopen.webp", "manifest.webmanifest", "icon-192.png", "icon-512.png", "icon-maskable-512.png", "apple-touch-icon.png"];
+const PRECACHE = ["assets/logos/lacoste.png","assets/logos/dobel.png","stadium-sponsors.js","assets/logos/jpmorgan.png","assets/logos/range-rover.jpg","assets/logos/rolex.jpg","assets/logos/polo.png","assets/logos/renault.jpg","assets/logos/ibm.jpg","assets/logos/infosys.png","assets/logos/haier.png","assets/logos/rg.png","assets/logos/wilson.png","assets/logos/fage.png","assets/logos/perrier.png","assets/logos/deloitte.jpg","assets/logos/harvey.png","assets/logos/amex.png","assets/logos/cadillac.png","assets/logos/chubb.png","assets/logos/wimbledon.svg","assets/logos/usopen.svg","assets/logos/emirates.jpg","assets/logos/accor.png","assets/logos/barclays.jpg","assets/logos/bnp.png","./", "vendor/three-r128.min.js", "stadium-realism.js", "assets/spectators-photo.png", "assets/athlete-skin.png", "assets/crowd-summer.webp", "assets/crowd-wimb.webp", "assets/crowd-usopen.webp", "manifest.webmanifest", "icon-192.png", "icon-512.png", "icon-maskable-512.png", "apple-touch-icon.png"];
 const ESPERA_RED = 3500; // ms antes de mostrar la copia guardada si la red no contesta
 
 self.addEventListener("install", e => {

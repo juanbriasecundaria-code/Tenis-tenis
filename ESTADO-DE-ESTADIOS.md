@@ -1,23 +1,49 @@
-# Estadios — revisión de referencias adjuntas (v8)
+# Logos originales y disposición — v9
 
-Esta versión parte de la base nueva con el realismo restaurado. Conserva la lógica de contactos, torneos y demás funcionalidades de la aplicación.
+Los archivos de assets/logos se descargaron de las páginas oficiales de patrocinadores de Roland-Garros, Wimbledon y US Open. Son los archivos originales, no texto con tipografías parecidas. stadium-sponsors.js crea versiones monocromas y recorta márgenes al cargar las texturas, conservando la forma del logo. Barclays se compone con el águila sobre la palabra; BNP Paribas se compone horizontalmente a partir de su símbolo y nombre originales.
 
-## Cambios
-- Arthur Ashe: muros azules de fondo altos y laterales bajos, cartelería diferenciada por altura, franja azul sobre los palcos, dos pantallas altas centradas en los fondos en lugar de ocho pantallas genéricas. Colores de cancha azul y entorno verde ajustados al video.
-- Philippe-Chatrier: planta más rectangular, muros verdes de fondo, hormigón en los laterales, paneles bajos separados y cubierta de once lamas. Se retiraron las pantallas y los relojes duplicados cuya ubicación no estaba respaldada por el material.
-- Wimbledon: marcador bajo desplazado al costado del fondo, volumen del palco, asientos verdes más claros, sillas blancas individuales, franjas de césped longitudinales y entramado blanco de cubierta más visible. Sin repetición de publicidad perimetral.
-- Se mantienen red detallada, materiales, personas, mobiliario y controles de cámaras/calidad.
+La colocación toma como referencia las cuatro capturas de partidos adjuntas: 220957 (Roland Garros), 221637/221647 (Wimbledon), 221712 (US Open). Las nuevas capturas sustituyen a los modelos comerciales como referencia para la publicidad. No se copiaron overlays televisivos de ESPN, marcadores superpuestos ni controles de YouTube.
 
-## Evidencia y límites
-Se revisaron fotogramas de los dos MP4 adjuntos y las once imágenes de Wimbledon. Todos son renders de modelos 3D, no levantamientos del edificio ni evidencia de la edición actual del torneo.
+- Roland Garros: banner blanco de BNP Paribas al fondo, Emirates arriba, BNP en el nivel inferior, Renault en la red, Perrier en la zona del umpire, Renault/Accor y Perrier/Lacoste en los laterales, Haier frente al umpire.
+- Wimbledon: símbolos del torneo al fondo, dos marcadores laterales, reloj, Emirates discreto, IBM/Range Rover y Barclays en la silla; umpire al lado derecho en la cámara de televisión.
+- US Open: J.P. Morgan, US Open, Emirates y American Express al fondo; Rolex e IBM en la parte baja; Cadillac en la red; Wilson/Harvey/Fage y Chubb/Deloitte/Dobel en laterales; Polo y Chubb en la silla.
 
-Arthur Ashe: vistas a 7.6, 22.9, 38, 55 y 84 segundos permiten distinguir distintas alturas, pantallas y nombres como Chase, Emirates Airline, J.P. Morgan, CHUBB, IHG, Spectrum, Deloitte y Mercedes-Benz. El video también incluye créditos del autor, omitidos en la cartelería de la aplicación. Letras recreadas tipográficamente; no se han reproducido logotipos oficiales exactos. La simetría de lados parcialmente ocultos y las coordenadas en metros son aproximaciones visuales.
+La vista Televisión mira desde el fondo; Estadio mantiene el encuadre general anterior. También se conservan Cancha y Red y bancos.
 
-Chatrier: el video muestra texto del proveedor «3DModels» en los paneles. No permite confirmar patrocinadores reales. Se conservaron las ubicaciones de los paneles sin inventar nombres comerciales. El rótulo de identificación Roland-Garros es una interpretación, no copia exacta de un emblema. No se localizaron pantallas con suficiente claridad; su ausencia en esta reconstrucción no significa que no existan en el estadio real.
-
-Wimbledon: las vistas 383c0cc807 y 38ceced94e muestran el marcador bajo, el palco y las sillas a ambos lados del umpire. Sólo se reproduce el marcador cuya ubicación se distingue; los sectores no visibles no se presentan como verificados.
-
-Los estadios siguen siendo geometría procedural aproximada. No equivalen a una réplica arquitectónica exacta ni a fotorealismo completo. No se incorporaron los modelos comerciales originales ni los videos como activos de la aplicación.
+## Límites concretos
+Coordenadas y tamaños estimados visualmente, no medición arquitectónica. El extremo oculto se resuelve por simetría; no se afirma que la captura verifique ese extremo. Algunos archivos oficiales actuales tienen composición distinta a la publicidad de la foto (por ejemplo, US Open horizontal), por lo que no es una copia píxel por píxel. Se conservan la arquitectura procedural, jugadores y público de la versión anterior: no es una réplica fotorealista completa.
 
 ## Validación
-Pruebas locales de los tres estadios, tres calidades, cámaras, pausa/reanudación, movimiento reducido y salida de vista de partido: sin errores JavaScript o shader. Vista móvil 390 × 844 sin desbordamiento horizontal. Capturas actualizadas en vistas-previas. No se midió rendimiento en un teléfono físico.
+Carga local de los logos, tres superficies, controles de calidad, pausa/reanudación, movimiento reducido y vista móvil sin desborde. Sin errores JavaScript o shader en la prueba. La lógica de torneos y contactos se conserva. Fuentes incluidas para trazabilidad; las marcas pertenecen a sus titulares.
+
+## Páginas de origen
+- https://www.rolandgarros.com/en-us/partners
+- https://www.wimbledon.com/en_GB/about/official_partners
+- https://www.usopen.org/en_US/about/sponsors.html
+
+## Archivos originales
+- bnp.png: https://images.prismic.io/fft-rg-site/ba71494b-4ee7-4072-962d-c55895522a4a_27c83e3b-c15f-4b07-b354-50d6d5d16531_bnpparibas.png?auto=compress,format&rect=16,0,523,285&w=176&h=96
+- emirates.jpg: https://images.prismic.io/fft-rg-site/aZSnEFWLo0XkEmhF_EKLogotype-English1.png?auto=format,compress
+- renault.jpg: https://images.prismic.io/fft-rg-site/cc583387-3eee-4b7e-8efc-2f8ad8073306_Renault.jpg?auto=compress,format
+- rolex.jpg: https://images.prismic.io/fft-rg-site/26246efd-d930-44ab-a88b-ef7766889296_Rolex.jpg?auto=compress,format
+- accor.png: https://images.prismic.io/fft-rg-site/aRX2grpReVYa4cBm_All_accor.png?auto=format,compress
+- haier.png: https://images.prismic.io/fft-rg-site/ZkNtniol0Zci9HQ__logoHaier_300dpi_nero.png?auto=compress,format
+- infosys.png: https://images.prismic.io/fft-rg-site/17250f6f-1c73-4a09-992c-86ba0a67b613_Infosys.png?auto=compress,format
+- perrier.png: https://images.prismic.io/fft-rg-site/Z1HW4pbqstJ98FWb_99E_P_PERI001_PERRIER_LOGO_GREEN_TYPO2.png?auto=format%2Ccompress&rect=1197%2C1346%2C2618%2C2618&w=300&h=300
+- rg.png: https://images.prismic.io/fft-rg-site/58ff2d89-3f3d-4e85-859f-7c89d50e2581_RG_log_inst_cou_R.png?auto=compress,format&rect=0,0,1181,1181&w=160&h=160
+- barclays.jpg: https://content.wimbledon.com/is/image/AELTC/barclays+logo+web+v2:16by9-Medium
+- ibm.jpg: https://content.wimbledon.com/is/image/AELTC/IBM+Cropped+Logo:16by9-Medium
+- range-rover.jpg: https://content.wimbledon.com/is/image/AELTC/range+rover+web+logo:16by9-Medium
+- wimbledon.svg: https://www.wimbledon.com/_next/static/media/Logo-Wimbledon.2wyelfplbl7j4.svg?dpl=v0_118_1
+- amex.png: https://photo-assets.usopen.org/images/pics/misc/AXP_BlueBoxLogo_SMALLscale_CMYK_PE.png
+- jpmorgan.png: https://photo-assets.usopen.org/images/pics/misc/jp_morgan.png
+- cadillac.png: https://photo-assets.usopen.org/images/pics/misc/partners-logo-cadillac-small.png
+- chubb.png: https://photo-assets.usopen.org/images/pics/misc/partners-logo-chubb-small.png
+- deloitte.jpg: https://photo-assets.usopen.org/images/pics/misc/Deloitte-Sponsors.jpg
+- fage.png: https://photo-assets.usopen.org/images/pics/misc/Fage-landing-sm.png
+- harvey.png: https://photo-assets.usopen.org/images/pics/misc/harvey-2026-small-2.png
+- polo.png: https://photo-assets.usopen.org/images/pics/misc/polo.png
+- wilson.png: https://photo-assets.usopen.org/images/pics/misc/2025-wilson-small.png
+- usopen.svg: https://www.usopen.org/assets/images/header/usopen-header-logo.svg
+- lacoste.png: https://images.prismic.io/fft-rg-site/ahbmcbK9tuLqELtK_Frame3-2-.png?auto=format,compress
+- dobel.png: https://photo-assets.usopen.org/images/pics/misc/dobel-tequila-logo-2024-small-2.png

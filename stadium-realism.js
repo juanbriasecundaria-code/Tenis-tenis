@@ -39,7 +39,7 @@ function stAthleteHead(){
 
 function stDetailedNet(grp,V){
   const group=new THREE.Group();group.name='Competition net';grp.add(group);
-  const {mat,mesh,rod,box}=stDetailKit(group),paint=mat(V.post,.42,.22),metal=mat(0xB9BDB7,.3,.7),rope=mat(0x292F29,.95),white=mat(0xF5F2E8,.92);
+  const {mat,mesh,rod,box}=stDetailKit(group),paint=mat(V.roof==='wimb'?0xBF9143:V.post,.42,.22),metal=mat(0xB9BDB7,.3,.7),rope=mat(0x292F29,.95),white=mat(0xF5F2E8,.92);
   white.bumpMap=stFabricTexture();white.bumpScale=.0012;
   const top=z=>.914+.156*Math.pow(Math.min(1,Math.abs(z)/5.029),1.8);
   const geo=new THREE.PlaneGeometry(12.798,1,96,8),p=geo.attributes.position;
@@ -84,76 +84,11 @@ function stBrandTexture(text,bg,fg='#F4F2EA',subtitle=''){
   });
 }
 // Layout derived from supplied model views; coordinates are visual estimates, not a survey.
-function stVenueBoards(grp,V,tiers){
-  const g=new THREE.Group();g.name='Tournament courtside signage';grp.add(g);
-  const {mat,box,mesh}=stDetailKit(g),ashe=V.roof==='ashe',rg=V.roof==='chatrier';
-  const bg=ashe?'#2485B2':'#17452E', wall=mat(ashe?0x2485B2:0x17452E,.92);
-  const panel=(text,x,y,z,w,h,rotation,color=bg)=>{
-    const p=mesh(new THREE.PlaneGeometry(w,h),new THREE.MeshStandardMaterial({map:stBrandTexture(text,color),roughness:.9}),x,y,z);p.rotation.y=rotation;p.castShadow=false;return p;
-  };
-  if(ashe){
-    // Tall end walls, low sideline strips. Names legible at 7.6s and 84s in the supplied video.
-    for(const end of [-1,1]){
-      box(.22,3.25,ST_HZ*2,wall,end*(ST_HX+.05),1.625,0);
-      const rot=end<0?Math.PI/2:-Math.PI/2,x=end*(ST_HX-.075);
-      [[-6.5,'CHASE',3.2],[-2.2,'US OPEN',3.2],[2.4,'J.P. Morgan',3.7],[6.7,'Emirates Airline',4.4]].forEach(([z,t,w])=>panel(t,x,2.30,z,w,.74,rot));
-      for(const z of [-6,-2,2,6]){box(.025,.31,1.50,mat(0x111820),x,.38,z);}
-      panel('ROLEX',x,.92,7.1,1.1,.65,rot,'#17452E');
-    }
-    const sideNames=[[-14.6,'CHUBB',4.2],[-8.6,'IHG',3.6],[-2.2,'US OPEN',3.4],[4.4,'Spectrum',4.0],[10.0,'Deloitte.',3.9],[15.0,'MERCEDES-BENZ',4.5]];
-    for(const side of [-1,1])sideNames.forEach(([x,t,w])=>panel(t,x,.52,side*(ST_HZ-.055),w,.58,side<0?0:Math.PI));
-    const T=tiers[1],z=ST_HZ+T.o0-.10;
-    for(const side of [-1,1]){
-      panel('US OPEN',0,T.top+.70,side*z,29,.72,side<0?0:Math.PI,'#168DC1');
-      [[-15,'CHASE'],[-7.5,'AMERICAN EXPRESS'],[0,'ARTHUR ASHE STADIUM'],[8,'Emirates Airline'],[16,'POLO RALPH LAUREN']].forEach(([x,t])=>panel(t,x,T.base-1.35,side*z,6.5,.62,side<0?0:Math.PI,'#102E50'));
-    }
-  }else if(rg){
-    // Model has tall green ends, concrete sides and low discrete advertising panels.
-    for(const end of [-1,1]){
-      box(.22,3.15,ST_HZ*2,wall,end*(ST_HX+.04),1.575,0);
-      panel('ROLAND-GARROS',end*(ST_HX-.08),1.85,0,4.2,1.10,end<0?Math.PI/2:-Math.PI/2);
-    }
-    const concrete=mat(0xB5B3A9,.98);
-    for(const side of [-1,1]){
-      box(2*ST_HX,1.30,.18,concrete,0,1.50,side*(ST_HZ+.08));
-      for(const x of [-15,-10,-5,5,10,15]){
-        const board=box(4.75,.64,.18,wall,x,.38,side*(ST_HZ-.16));board.rotation.x=side*.10;
-      }
-      // No fictitious sponsors: text in the source is the model vendor's placeholder.
-    }
-  }
-}
-
-function stVenueLandmarks(grp,V,tiers){
-  if(V.roof!=='wimb')return;
-  const g=new THREE.Group();g.name='Centre Court end pavilion';grp.add(g);
-  const {mat,box,rod}=stDetailKit(g),green=mat(0x284D34),stone=mat(0xADA995),wood=mat(0x735134),glass=mat(0x142C21);
-  // Raised central enclosure visible behind the far baseline in the supplied Wimbledon views.
-  const x=ST_HX+1.4;
-  box(3.5,4.4,10.4,green,x,2.2,0);box(3.9,.22,10.8,stone,x,4.5,0);
-  for(const z of [-3.6,-1.8,0,1.8,3.6]){
-    box(.04,.62,1.12,glass,x-1.77,2.82,z);
-    for(const dz of [-.35,0,.35])rod([x-1.80,2.53,z+dz],[x-1.80,3.12,z+dz],.015,wood);
-  }
-  box(.20,1.0,10.6,green,x-1.75,5.05,0);
-  for(const z of [-5.2,5.2])box(3.7,1.15,.16,wood,x,5.12,z);
-  for(let row=0;row<4;row++)for(let col=0;col<12;col++){
-    box(.51,.12,.48,mat(0x57876E),x-.8+row*.65,4.75+row*.25,(col-5.5)*.72);
-    box(.10,.48,.48,green,x-.51+row*.65,4.98+row*.25,(col-5.5)*.72);
-  }
-}
-
 function stVenueScreens(V,tiers,scr){
   const last=tiers[tiers.length-1];
-  if(V.roof==='ashe'){
-    // Screens centered beneath roof trusses, not on the four bowl corners.
-    for(const end of [-1,1])scr(end*(ST_HX+last.o0+2),last.top+1.1,0,7.2,5.0,false);
-  }else if(V.roof==='wimb'){
-    scr(ST_HX+.82,3.0,-7.55,3.8,2.4,false);
-  }
-  // No video screens can be located confidently in the supplied Chatrier orbit.
+  if(V.roof==='ashe')for(const end of [-1,1])scr(end*(ST_HX+last.o0+2),last.top+1.1,0,7.2,5.0,false);
+  if(V.roof==='wimb')for(const end of [-1,1])for(const z of [-8.2,8.2])scr(end*(ST_HX+.8),3.7,z,3.4,1.8,false);
 }
-
 function stCourtsideFurniture(grp,V){
   const group=new THREE.Group();group.name='Player benches and umpire tower';grp.add(group);
   const {mat,mesh,box,round,rod}=stDetailKit(group);
@@ -182,7 +117,7 @@ function stCourtsideFurniture(grp,V){
   box(.245,.004,.155,mat(0x68878B,.33),.13,2.499,uz+.49).rotation.x=-.16;
   rod([-.25,2.46,uz+.46],[-.25,2.65,uz+.48],.007,rubber);rod([-.25,2.65,uz+.48],[-.12,2.72,uz+.52],.007,rubber);
   mesh(new THREE.SphereGeometry(.017,8,6),rubber,-.12,2.72,uz+.52);
-  const banner=mesh(new THREE.PlaneGeometry(.77,1.02),new THREE.MeshStandardMaterial({map:stBrandTexture(V.roof==='wimb'?'':V.roof==='chatrier'?'':'US OPEN',V.roof==='ashe'?'#173E75':'#153F2F'),roughness:.86}),0,.88,uz+.54);
+
   // Slatted two-seat benches, independent armrests and contoured backs.
   for(const sign of [-1,1]){
     const x=sign*3.5,z=-7.78;
@@ -224,7 +159,8 @@ function stCourtsideFurniture(grp,V){
   }
   // Two low equipment boxes and folded spare towels, placed outside the doubles sidelines.
   for(const z of [-7.3,7.3]){round(.50,.31,.48,.035,green,1.7,.17,z);round(.42,.075,.35,.025,towel,1.7,.355,z);}
-  stMergeParts(group);return {uz};
+  if(V.roof==='wimb')group.rotation.y=Math.PI;
+  stMergeParts(group);return {uz:V.roof==='wimb'?-uz:uz};
 }
 
 function stPlayerDetails(R,o){

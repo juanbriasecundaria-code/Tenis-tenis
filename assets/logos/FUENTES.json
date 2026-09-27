@@ -1,0 +1,127 @@
+{
+  "bnp": {
+    "url": "https://images.prismic.io/fft-rg-site/ba71494b-4ee7-4072-962d-c55895522a4a_27c83e3b-c15f-4b07-b354-50d6d5d16531_bnpparibas.png?auto=compress,format&rect=16,0,523,285&w=176&h=96",
+    "file": "bnp.png",
+    "bytes": 4513
+  },
+  "emirates": {
+    "url": "https://images.prismic.io/fft-rg-site/aZSnEFWLo0XkEmhF_EKLogotype-English1.png?auto=format,compress",
+    "file": "emirates.jpg",
+    "bytes": 2895
+  },
+  "renault": {
+    "url": "https://images.prismic.io/fft-rg-site/cc583387-3eee-4b7e-8efc-2f8ad8073306_Renault.jpg?auto=compress,format",
+    "file": "renault.jpg",
+    "bytes": 3926
+  },
+  "rolex": {
+    "url": "https://images.prismic.io/fft-rg-site/26246efd-d930-44ab-a88b-ef7766889296_Rolex.jpg?auto=compress,format",
+    "file": "rolex.jpg",
+    "bytes": 3410
+  },
+  "accor": {
+    "url": "https://images.prismic.io/fft-rg-site/aRX2grpReVYa4cBm_All_accor.png?auto=format,compress",
+    "file": "accor.png",
+    "bytes": 7913
+  },
+  "haier": {
+    "url": "https://images.prismic.io/fft-rg-site/ZkNtniol0Zci9HQ__logoHaier_300dpi_nero.png?auto=compress,format",
+    "file": "haier.png",
+    "bytes": 16844
+  },
+  "infosys": {
+    "url": "https://images.prismic.io/fft-rg-site/17250f6f-1c73-4a09-992c-86ba0a67b613_Infosys.png?auto=compress,format",
+    "file": "infosys.png",
+    "bytes": 3917
+  },
+  "perrier": {
+    "url": "https://images.prismic.io/fft-rg-site/Z1HW4pbqstJ98FWb_99E_P_PERI001_PERRIER_LOGO_GREEN_TYPO2.png?auto=format%2Ccompress&rect=1197%2C1346%2C2618%2C2618&w=300&h=300",
+    "file": "perrier.png",
+    "bytes": 8285
+  },
+  "rg": {
+    "url": "https://images.prismic.io/fft-rg-site/58ff2d89-3f3d-4e85-859f-7c89d50e2581_RG_log_inst_cou_R.png?auto=compress,format&rect=0,0,1181,1181&w=160&h=160",
+    "file": "rg.png",
+    "bytes": 14278
+  },
+  "barclays": {
+    "url": "https://content.wimbledon.com/is/image/AELTC/barclays+logo+web+v2:16by9-Medium",
+    "file": "barclays.jpg",
+    "bytes": 12938
+  },
+  "ibm": {
+    "url": "https://content.wimbledon.com/is/image/AELTC/IBM+Cropped+Logo:16by9-Medium",
+    "file": "ibm.jpg",
+    "bytes": 23957
+  },
+  "range-rover": {
+    "url": "https://content.wimbledon.com/is/image/AELTC/range+rover+web+logo:16by9-Medium",
+    "file": "range-rover.jpg",
+    "bytes": 8493
+  },
+  "wimbledon": {
+    "url": "https://www.wimbledon.com/_next/static/media/Logo-Wimbledon.2wyelfplbl7j4.svg?dpl=v0_118_1",
+    "file": "wimbledon.svg",
+    "bytes": 11925
+  },
+  "amex": {
+    "url": "https://photo-assets.usopen.org/images/pics/misc/AXP_BlueBoxLogo_SMALLscale_CMYK_PE.png",
+    "file": "amex.png",
+    "bytes": 834
+  },
+  "jpmorgan": {
+    "url": "https://photo-assets.usopen.org/images/pics/misc/jp_morgan.png",
+    "file": "jpmorgan.png",
+    "bytes": 2360
+  },
+  "cadillac": {
+    "url": "https://photo-assets.usopen.org/images/pics/misc/partners-logo-cadillac-small.png",
+    "file": "cadillac.png",
+    "bytes": 11882
+  },
+  "chubb": {
+    "url": "https://photo-assets.usopen.org/images/pics/misc/partners-logo-chubb-small.png",
+    "file": "chubb.png",
+    "bytes": 2449
+  },
+  "deloitte": {
+    "url": "https://photo-assets.usopen.org/images/pics/misc/Deloitte-Sponsors.jpg",
+    "file": "deloitte.jpg",
+    "bytes": 2696
+  },
+  "fage": {
+    "url": "https://photo-assets.usopen.org/images/pics/misc/Fage-landing-sm.png",
+    "file": "fage.png",
+    "bytes": 16807
+  },
+  "harvey": {
+    "url": "https://photo-assets.usopen.org/images/pics/misc/harvey-2026-small-2.png",
+    "file": "harvey.png",
+    "bytes": 3396
+  },
+  "polo": {
+    "url": "https://photo-assets.usopen.org/images/pics/misc/polo.png",
+    "file": "polo.png",
+    "bytes": 2108
+  },
+  "wilson": {
+    "url": "https://photo-assets.usopen.org/images/pics/misc/2025-wilson-small.png",
+    "file": "wilson.png",
+    "bytes": 3168
+  },
+  "usopen": {
+    "url": "https://www.usopen.org/assets/images/header/usopen-header-logo.svg",
+    "file": "usopen.svg",
+    "bytes": 2599
+  },
+  "lacoste": {
+    "url": "https://images.prismic.io/fft-rg-site/ahbmcbK9tuLqELtK_Frame3-2-.png?auto=format,compress",
+    "file": "lacoste.png",
+    "bytes": 21456
+  },
+  "dobel": {
+    "url": "https://photo-assets.usopen.org/images/pics/misc/dobel-tequila-logo-2024-small-2.png",
+    "file": "dobel.png",
+    "bytes": 5029
+  }
+}
