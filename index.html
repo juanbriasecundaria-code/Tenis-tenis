@@ -390,7 +390,16 @@ svg.tchev{width:20px;height:20px;flex-shrink:0;transition:transform .18s;color:v
 .pchip .nom{font-weight:500}
 .pchip .pclub{font-weight:500;margin-left:2px}
 .pcard{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);background:var(--surface);border:1px solid var(--line);border-radius:14px;overflow:hidden}
-.pc-main{padding:24px;display:flex;flex-direction:column;gap:6px}
+.pc-main{padding:24px;display:flex;flex-direction:column;gap:6px;position:relative;overflow:hidden;
+  background:
+    radial-gradient(120% 100% at 0% -20%,color-mix(in srgb,var(--court-in) 30%,transparent),transparent 60%),
+    repeating-linear-gradient(135deg,color-mix(in srgb,var(--text) 5%,transparent) 0 1px,transparent 1px 26px)}
+.pc-main::before{content:"";position:absolute;right:-90px;bottom:-110px;width:300px;height:300px;border-radius:50%;
+  background:color-mix(in srgb,var(--accent) 16%,transparent);filter:blur(6px);z-index:0;pointer-events:none}
+.pc-main::after{content:"";position:absolute;right:34px;bottom:24px;width:70px;height:70px;border-radius:50%;
+  background:color-mix(in srgb,var(--ball) 55%,transparent);box-shadow:inset -6px -6px 0 -2px color-mix(in srgb,var(--bg) 35%,transparent);
+  opacity:.16;z-index:0;pointer-events:none}
+.pc-main>*{position:relative;z-index:1}
 .pc-main h1{font-size:clamp(2.6rem,7vw,4.2rem)}
 .pc-main .sub{color:var(--muted);font-weight:600;font-size:1.1rem}
 .pc-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
