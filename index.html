@@ -43,7 +43,7 @@
   --win:#8FD9A8;--loss:#F4927F;--court-in:#C0582B;--court-out:#AE4D24;--grain:.28;--mow:0;
 }
 :root[data-surface="polvo"]{--bg:#1B130F;--surface:#281C15;--surface-2:#33241B;--text:#F6EFE7;--muted:#C7B1A1;--accent:#D0652F;--accent-2:#B0521F;--accent-ink:#FFF7EF;--ball:#DDE95B;--ball-ink:#1C2200;--win:#8FD9A8;--loss:#F4927F;--court-in:#C0582B;--court-out:#AE4D24;--grain:.28;--mow:0}
-:root[data-surface="cesped"]{--bg:#0C2417;--surface:#123220;--surface-2:#193F29;--text:#EFF3EC;--muted:#A3BCA8;--accent:#8457C2;--accent-2:#6C43A6;--accent-ink:#FFFFFF;--ball:#DDE95B;--ball-ink:#1C2200;--win:#8FD9A8;--loss:#F4927F;--court-in:#4B8C38;--court-out:#417D30;--grain:.14;--mow:1}
+:root[data-surface="cesped"]{--bg:#0C2417;--surface:#123220;--surface-2:#193F29;--text:#EFF3EC;--muted:#A3BCA8;--accent:#6FBF4B;--accent-2:#4E9C34;--accent-ink:#0C2417;--ball:#DDE95B;--ball-ink:#1C2200;--win:#8FD9A8;--loss:#F4927F;--court-in:#4B8C38;--court-out:#417D30;--grain:.14;--mow:1}
 :root[data-surface="dura"]{--bg:#0B1828;--surface:#122338;--surface-2:#192E47;--text:#EEF3F9;--muted:#9EB2C8;--accent:#3C86DB;--accent-2:#2C6FBF;--accent-ink:#FFFFFF;--ball:#DDE95B;--ball-ink:#1C2200;--win:#8FD9A8;--loss:#F4927F;--court-in:#2D66A3;--court-out:#3A7753;--grain:.1;--mow:0}
 
 *,*::before,*::after{box-sizing:inherit}
@@ -390,8 +390,19 @@ svg.tchev{width:20px;height:20px;flex-shrink:0;transition:transform .18s;color:v
 .pchip .nom{font-weight:500}
 .pchip .pclub{font-weight:500;margin-left:2px}
 .pcard{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);background:var(--surface);border:1px solid var(--line);border-radius:14px;overflow:hidden}
-.pc-main{padding:24px;display:flex;flex-direction:column;gap:6px}
+.pc-main{padding:24px;display:flex;flex-direction:column;gap:6px;position:relative;overflow:hidden;
+  background:repeating-linear-gradient(135deg,color-mix(in srgb,var(--text) 6%,transparent) 0 1px,transparent 1px 26px)}
+.pc-main>*{position:relative;z-index:1}
 .pc-main h1{font-size:clamp(2.6rem,7vw,4.2rem)}
+.pc-ball{position:absolute;right:-40px;bottom:-100px;width:210px;height:210px;border-radius:50%;overflow:hidden;
+  background:color-mix(in srgb,var(--ball) 42%,var(--surface));opacity:.5;z-index:0;pointer-events:none}
+.pc-ball::before,.pc-ball::after{content:"";position:absolute;left:-24%;width:148%;height:74%;
+  border:7px solid color-mix(in srgb,var(--ball-ink) 65%,transparent);border-radius:50%;opacity:.6}
+.pc-ball::before{top:-38%;transform:rotate(16deg)}
+.pc-ball::after{bottom:-38%;transform:rotate(-16deg)}
+.pcard{position:relative}
+.pcard::after{content:"";position:absolute;left:0;right:0;bottom:0;height:2px;
+  background:repeating-linear-gradient(90deg,var(--gold) 0 10px,transparent 10px 18px)}
 .pc-main .sub{color:var(--muted);font-weight:600;font-size:1.1rem}
 .pc-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
 .pc-table{margin-top:auto;padding-top:18px;border-top:1px solid var(--line);display:grid;grid-template-columns:5rem repeat(3,minmax(0,1fr));gap:4px 8px}
@@ -403,11 +414,11 @@ svg.tchev{width:20px;height:20px;flex-shrink:0;transition:transform .18s;color:v
 .pc-table-row.cur b,.pc-table-row.cur span{color:var(--text)}
 @media (max-width:480px){.pc-table{grid-template-columns:4rem repeat(3,minmax(0,1fr))}.pc-table-row:not(.pc-table-h) span{font-size:1.05rem}}
 .pc-media{position:relative;background:var(--court-in);background-size:cover;background-position:center top;
-  display:grid;place-items:center;aspect-ratio:3/4;min-height:320px;transition:background-color .45s}
+  display:grid;place-items:center;min-height:320px;height:100%;transition:background-color .45s}
 .pc-media[style*="url"]::before{content:"";position:absolute;inset:0;background:linear-gradient(90deg,var(--surface),transparent 32%)}
 .pc-media-ph{display:grid;place-items:center;width:100%;height:100%;color:#fff;font-weight:850;font-stretch:66%;font-size:3.4rem}
 .pc-media-edit{position:absolute;left:14px;right:14px;bottom:14px;z-index:1;display:flex;flex-wrap:wrap;gap:8px}
-@media (max-width:640px){.pcard{grid-template-columns:1fr}.pc-media{aspect-ratio:3/4;min-height:280px}}
+@media (max-width:640px){.pcard{grid-template-columns:1fr}.pc-media{height:auto;aspect-ratio:3/4;min-height:280px}}
 .stats{display:grid;grid-template-columns:repeat(4,1fr);background:var(--surface);border:1px solid var(--line);border-radius:12px;overflow:hidden;margin-top:14px}
 .stat{padding:16px 18px}.stat + .stat{border-left:1px solid var(--line)}
 .stat b{display:block;font-stretch:66%;font-weight:900;font-size:2.3rem;line-height:1;font-variant-numeric:tabular-nums}
@@ -724,6 +735,26 @@ html[data-screen="1"] .credit{display:none}
 @media(max-width:480px){.stadium-tools{max-width:calc(100vw - 115px);flex-wrap:wrap}.stadium-tools #stadiumCamera{max-width:112px}}
 @media(max-width:700px){.stadium-tools #stadiumStatus,.stadium-tools>label{display:none}.stadium-tools{left:8px;top:calc(10px + env(safe-area-inset-top,0px));gap:5px;padding:5px}.stadium-tools select,.stadium-tools button{min-height:32px;padding:5px}.gate-watch{right:8px;top:calc(10px + env(safe-area-inset-top,0px));font-size:12px;padding:11px 9px}.gate-watch .i{width:15px;height:15px}}
 
+/* ================= Tutorial de bienvenida ================= */
+.tour-fab{position:fixed;z-index:55;right:calc(16px + env(safe-area-inset-right,0px));bottom:calc(20px + env(safe-area-inset-bottom,0px));width:46px;height:46px;border-radius:50%;
+  background:var(--text);color:var(--bg);border:0;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:1.1rem;cursor:pointer;box-shadow:0 8px 20px rgba(0,0,0,.28);transition:transform .15s}
+.tour-fab:hover{transform:scale(1.06)}
+@media(max-width:900px){.tour-fab{bottom:calc(78px + env(safe-area-inset-bottom,0px))}}
+.tour-veil{position:fixed;inset:0;z-index:70;background:rgba(6,10,9,.55);-webkit-backdrop-filter:blur(1px);backdrop-filter:blur(1px)}
+.tour-spot{position:fixed;z-index:71;border-radius:14px;box-shadow:0 0 0 4000px rgba(6,10,9,.72),0 0 0 3px var(--ball);pointer-events:none;transition:top .28s cubic-bezier(.4,0,.2,1),left .28s cubic-bezier(.4,0,.2,1),width .28s cubic-bezier(.4,0,.2,1),height .28s cubic-bezier(.4,0,.2,1)}
+.tour-card{position:fixed;z-index:72;width:min(340px,calc(100vw - 32px));background:var(--surface);color:var(--text);border-radius:16px;box-shadow:0 24px 60px rgba(0,0,0,.45);
+  padding:20px;display:flex;flex-direction:column;gap:12px;transition:top .28s cubic-bezier(.4,0,.2,1),left .28s cubic-bezier(.4,0,.2,1);border:1px solid var(--line)}
+.tour-card.center{position:fixed;top:50%!important;left:50%!important;transform:translate(-50%,-50%);width:min(400px,calc(100vw - 32px))}
+.tour-eyebrow{font-size:.72rem;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:var(--accent)}
+.tour-card h3{margin:0;font-stretch:70%;font-weight:850;font-size:1.4rem;line-height:1.05}
+.tour-card p{margin:0;color:var(--muted);font-size:.92rem;line-height:1.4}
+.tour-dots{display:flex;gap:5px;align-items:center;flex-wrap:wrap;row-gap:6px}
+.tour-dots span{width:6px;height:6px;border-radius:50%;background:var(--line-strong);flex:none}
+.tour-dots span.on{background:var(--accent);width:16px;border-radius:3px}
+.tour-btns{display:flex;align-items:center;gap:8px;margin-top:2px}
+.tour-btns .btn{padding:8px 14px;font-size:.88rem}
+.tour-skip{margin-left:auto;background:none;border:0;color:var(--muted);font-weight:700;font-size:.82rem;cursor:pointer;text-decoration:underline;text-underline-offset:3px;padding:4px}
+@media(max-width:480px){.tour-card{padding:16px}.tour-card h3{font-size:1.2rem}}
 </style>
 </head>
 <body>
@@ -785,6 +816,7 @@ html[data-screen="1"] .credit{display:none}
 <main id="app" tabindex="-1"></main>
 <p class="credit">Creado por Juan Cruz Bria</p>
 <nav class="tabbar" aria-label="Principal" id="tabnav"></nav>
+<button class="tour-fab" id="tourFab" type="button" aria-label="Ver el tutorial de la app" title="Ver el tutorial" hidden>?</button>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 <dialog class="lb" id="lb" aria-label="Foto ampliada">
@@ -1189,8 +1221,11 @@ function bootApp(id, rol){
   cloudWatchData(id);
   cloudSyncClub(id);
   if(isCircuitoClub()) buildCircuitoIndex();
+  initTour();
 }
 function exitToGate(){
+  if(typeof tourEnd==="function"&&tourSteps) tourEnd();
+  const fab=document.getElementById("tourFab"); if(fab) fab.hidden=true;
   cloudUnwatchData();
   try{ sessionStorage.removeItem("liga_sesion"); sessionStorage.removeItem("liga:admin"); }catch(e){}
   gateMode = state.rol==="jugador" ? "player" : "admin";
@@ -3161,7 +3196,7 @@ function vPartidos(){
     .map(([k,l,v])=>({l,ic:k,href:redHref(k,v)})).filter(r=>r.href);
   const contactoView = (!canContact && contactoLinks.length) ? `<div class="pc-contact where-social"><span class="lbl">Contacto</span>${contactoLinks.map(r=>`<a class="soc" href="${esc(r.href)}" target="_blank" rel="noopener noreferrer">${icon(r.ic)}${r.l}</a>`).join("")}</div>` : "";
   return `<section class="wrap page"><div class="page-tools">${yearSel()}</div>
-    <div class="pcard"><div class="pc-main">
+    <div class="pcard"><div class="pc-main"><span class="pc-ball" aria-hidden="true"></span>
         <h1 class="display">${esc(s.ap)}</h1><span class="sub">${esc(s.nom)}${s.nom?", ":""}Categoría ${esc(catName(p.cat))}${modNote()}${isProfile?' <span class="me-tag">Tu perfil</span>':""}${clubInfo?` <span class="pclub">${miniShieldHTML(clubInfo)}</span>`:""}</span>
       <div class="pc-actions">${isProfile?`<button class="btn ghost sm" data-act="unprofile">Dejar de usar como mi perfil</button>`
         :`<button class="btn sm" data-act="profile">Guardar como mi perfil</button>`}<button class="btn ghost sm" data-act="pick">Elegir ${otroJugador()}</button></div>
@@ -4422,6 +4457,193 @@ function filterRank(){
   const q=state.q.trim().toLowerCase();
   body.querySelectorAll("tr[data-name]").forEach(tr=>tr.hidden=!!q&&!tr.dataset.name.includes(q));
   const cut=body.querySelector("[data-cut]"); if(cut) cut.hidden=!!q;
+}
+
+/* ================= Tutorial de bienvenida =================
+   Recorrido guiado, pestaña a pestaña, con contenido distinto para
+   jugador y para administrador. Se ofrece solo la primera vez que
+   ese rol entra a este club (queda guardado en localStorage) y
+   siempre se puede volver a ver con el botón "?" flotante. */
+const TOUR_PUBLICO_JUGADOR=[
+  {nav:"",sel:".hero",title:"Inicio",text:"El título, una frase de bienvenida (se arma sola según el estado del torneo) y un dibujo de la cancha con el resultado más reciente."},
+  {nav:"",sel:".info:not(.where)",title:"Información",text:"El mensaje de la organización y, si lo cargan, los horarios del fin de semana: quién juega, con quién y en qué cancha."},
+  {nav:"",sel:".info.where",title:"Mapa y redes",text:"La dirección del club con un botón para abrir Google Maps, y los links a Instagram, WhatsApp y demás redes."},
+  {nav:"",sel:".news-item",title:"Novedades",text:"Avisos de la organización sobre cualquier tema. Algunos traen un botón que te lleva a otra sección del sitio."},
+  {nav:"",sel:".explore",title:"Seguí la liga",text:"Accesos rápidos a Ranking, Torneos, Mis partidos y Fotos, cada uno con un resumen de lo último."},
+  {nav:"",sel:".foot",title:"Pie de página",text:"Acá abajo se aclara que el ranking sale solo, automáticamente, de los resultados que se van cargando."},
+  {nav:"ranking",title:"Ranking",text:"El ranking de tu categoría: quién va primero, tus puntos y con quién quedaste cara a cara."},
+  {nav:"ranking",sel:".yearsel-wrap",title:"Elegí el año",text:"Cambiá de temporada acá; \"Todos los años\" suma los puntos de toda la carrera."},
+  {nav:"ranking",sel:'.controls .seg[aria-label="Categoría"]',title:"Elegí tu categoría",text:"Cambiá de categoría acá arriba y la tabla de abajo se actualiza sola."},
+  {nav:"ranking",sel:"#rankSearch",title:"Buscador",text:"Escribí un apellido para encontrarlo rápido en la tabla, sin tener que scrollear."},
+  {nav:"ranking",sel:'[data-share="rank"]',title:"Compartir",text:"Mandalo por WhatsApp con un link, o descargalo como imagen lista para postear."},
+  {nav:"ranking",sel:".legend",title:"Qué significa cada color",text:"Cada color de punto representa hasta dónde llegó ese jugador: campeón, final, semi, cuartos, etc."},
+  {nav:"ranking",sel:".table-box",title:"La tabla",text:"Una fila por jugador, con sus puntos en cada torneo de la temporada y el total a la derecha."},
+  {nav:"torneos",title:"Torneos",text:"Los cuadros de cada torneo: llaves, horarios de partidos y resultados a medida que se van cargando."},
+  {nav:"torneos",sel:".yearsel-wrap",title:"Elegí el año",text:"Los torneos se agrupan por temporada; cambiá el año para ver los de otro momento."},
+  {nav:"torneos",sel:".thead",title:"Cada torneo, con sus categorías",text:"Tocá un torneo para desplegarlo. Adentro vas a ver la final de cada categoría, con Resultados y Cuadro."},
+  {nav:"torneos",sel:".tinscribe",title:"Inscribirme",text:"Cuando hay un torneo próximo con WhatsApp cargado, este botón te abre el mensaje ya escrito para anotarte."},
+  {nav:"torneos",sel:".actions",title:"Resultados y Cuadro",text:"Desde cada categoría entrás a ver los partidos jugados (Resultados) o la llave completa (Cuadro)."},
+  {nav:"partidos",title:"Mis partidos",text:"Elegí tu nombre una vez como \"tu perfil\" y esta pestaña te va a mostrar directo tus próximos partidos y tu historial."},
+  {nav:"partidos",sel:"#pickSearch",title:"Buscá tu nombre",text:"Escribí tu apellido acá y tocá tu nombre en la lista de tu categoría."},
+  {nav:"partidos",center:true,title:"Tu recorrido",text:"Al elegir un nombre vas a ver su posición, estadísticas (partidos y sets ganados) y el resultado de cada torneo, ronda por ronda."},
+  {nav:"partidos",center:true,title:"Guardar como tu perfil",text:"Si ese nombre es el tuyo, tocá \"Guardar como mi perfil\": la próxima vez que entres, esta pestaña te lleva directo ahí."},
+  {nav:"partidos",center:true,title:"WhatsApp e Instagram",text:"Desde tu perfil podés cargar tu WhatsApp o Instagram para que otros jugadores te encuentren y organicen un partido."},
+  {nav:"fotos",title:"Fotos",text:"Fotos de torneos y entregas de premios del club."},
+  {nav:"fotos",sel:".yearsel-wrap",title:"Filtrar por año",text:"Mostrá solo las fotos de una temporada, o todas juntas."},
+  {nav:"fotos",sel:".ph",title:"Tocá una foto",text:"Se abre en grande y con las flechas vas pasando a la siguiente."}
+];
+const TOUR_PUBLICO_ADMIN=[
+  {nav:"",sel:".hero",title:"Inicio",text:"Lo primero que ve cualquier jugador: título, frase de bienvenida (automática, salvo que escribas una) y la cancha con el resultado más reciente."},
+  {nav:"",sel:".info:not(.where)",title:"Información",text:"Tu mensaje para la organización y, si los cargás, los horarios del fin de semana. Se edita en el panel, pestaña Información."},
+  {nav:"",sel:".info.where",title:"Mapa y redes",text:"Dirección y redes del club. Si las dejás vacías, esta tarjeta directamente no se muestra. Se edita en Ubicación y redes."},
+  {nav:"",sel:".news-item",title:"Novedades",text:"Tus avisos, con el link \"Editar\" para ir directo a esa tarjeta en el panel."},
+  {nav:"",sel:".explore",title:"Seguí la liga",text:"Los mismos accesos rápidos que ve el jugador: Ranking, Torneos, Mis partidos y Fotos."},
+  {nav:"",sel:".foot",title:"Pie de página y acceso al panel",text:"Al pie de la página, además, tenés siempre el link \"Panel de administración\" para volver a editar."},
+  {nav:"ranking",title:"Ranking",text:"Se arma solo con los puntos que cargues en el panel; no hace falta tocar nada más para que se actualice acá."},
+  {nav:"ranking",sel:".yearsel-wrap",title:"Selector de año",text:"El jugador puede ver una temporada puntual o la suma de todos los años."},
+  {nav:"ranking",sel:'.controls .seg[aria-label="Categoría"]',title:"Selector de categoría",text:"Cambia la tabla de abajo; usalo para revisar que cada categoría esté bien cargada."},
+  {nav:"ranking",sel:"#rankSearch",title:"Buscador",text:"Le sirve al jugador para encontrarse rápido en tablas largas."},
+  {nav:"ranking",sel:'[data-share="rank"]',title:"Compartir",text:"El jugador puede mandar el ranking por WhatsApp o descargarlo como imagen."},
+  {nav:"ranking",sel:".legend",title:"Referencia de colores",text:"Explica qué significa cada color de punto: campeón, final, semi, etc."},
+  {nav:"ranking",sel:".table-box",title:"La tabla",text:"Sale sola de los puntos que cargues en el panel, pestaña Ranking."},
+  {nav:"torneos",title:"Torneos",text:"Los cuadros que ve el jugador. Salen del sorteo y de los resultados que vayas cargando desde el panel."},
+  {nav:"torneos",sel:".yearsel-wrap",title:"Selector de año",text:"Los torneos se agrupan por temporada, igual que en el panel."},
+  {nav:"torneos",sel:".thead",title:"Un torneo por bloque",text:"Cada torneo se despliega tocándolo. Es lo mismo que ve el jugador; sirve para revisar que esté todo bien cargado."},
+  {nav:"torneos",sel:".tinscribe",title:"Botón de inscripción",text:"Aparece solo si cargaste el WhatsApp del club en Ubicación y redes, y el torneo está Próximo."},
+  {nav:"torneos",sel:".actions",title:"Resultados y Cuadro",text:"Los links que usa el jugador para ver los partidos jugados o la llave completa de cada categoría."},
+  {nav:"partidos",title:"Mis partidos",text:"Cada jugador puede elegir su nombre acá para ver directo sus propios partidos e historial."},
+  {nav:"partidos",sel:"#pickSearch",title:"Buscador de jugadores",text:"Con este buscador cualquiera encuentra su nombre. Como admin también te sirve para revisar el perfil de alguien."},
+  {nav:"partidos",center:true,title:"Perfil del jugador",text:"Muestra posición, estadísticas y el resultado en cada torneo. Como admin podés subirle una foto desde acá."},
+  {nav:"partidos",center:true,title:"\"Guardar como mi perfil\"",text:"Así cada jugador entra directo a sus partidos la próxima vez, sin tener que buscarse de nuevo."},
+  {nav:"partidos",center:true,title:"Contacto",text:"Cada jugador puede cargar su WhatsApp o Instagram para que otros lo encuentren y organicen partidos."},
+  {nav:"fotos",title:"Fotos",text:"Las fotos que subas en el panel (sección Fotos) terminan mostrándose acá."},
+  {nav:"fotos",sel:".yearsel-wrap",title:"Filtrar por año",text:"El jugador puede ver solo las fotos de una temporada."},
+  {nav:"fotos",sel:".ph",title:"Galería",text:"Así se ven las fotos que cargues; tocando una se abren en grande, una atrás de la otra."}
+];
+const TOUR_PANEL_ADMIN=[
+  {panel:"inicio",title:"Panel · Inicio",text:"De un vistazo: los partidos de hoy, choques de horario y lo que falta resolver (inscriptos, sorteos, resultados) en cada modalidad con torneo en curso."},
+  {panel:"inicio",sel:'[data-act="save"]',title:"No te olvides de guardar",text:"Los cambios que hagas en cualquier pestaña del panel no se guardan solos: al terminar de editar, tocá este botón para confirmarlos."},
+  {panel:"categorias",title:"Panel · Categorías",text:"Las categorías de la modalidad que estés editando arriba. Cada una tiene su propio ranking, cuadro y resultados."},
+  {panel:"categorias",sel:".step-chip",title:"Estado general",text:"Esta barra aparece en varias pestañas y te dice qué falta para dejar lista la modalidad que estás mirando: categorías, torneo, inscriptos y sorteo."},
+  {panel:"categorias",sel:".mod-pick",title:"Qué estás editando",text:"Elegí acá la modalidad (singles o dobles) y el género. Cada combinación tiene sus propias categorías, torneos y ranking, totalmente separados."},
+  {panel:"categorias",sel:'[data-act="add-c"]',title:"Agregar categoría",text:"El orden en que las cargues acá es el mismo orden en que aparecen en todo el sitio."},
+  {panel:"torneos",title:"Panel · Torneos",text:"Acá creás cada torneo y elegís cuáles están en juego, próximos o cerrados."},
+  {panel:"torneos",sel:".ayear-head",title:"Agrupados por año",text:"Tocá un año para desplegarlo y ver los torneos de esa temporada; tocá un torneo para editarlo."},
+  {panel:"torneos",sel:'[data-act="wiz-new"]',title:"Crear torneo",text:"Te abre un asistente de 2 pasos: primero los datos del torneo, después los inscriptos y el sorteo."},
+  {panel:"sorteo",title:"Panel · Inscriptos y sorteo",text:"Cargá quién juega cada categoría y sorteá el cuadro cuando esté completo."},
+  {panel:"sorteo",sel:"[data-sorcat]",title:"Elegí la categoría",text:"Los inscriptos se cargan categoría por categoría; elegí cuál estás completando acá arriba."},
+  {panel:"sorteo",sel:"#inscNew",title:"Cargar inscriptos",text:"Escribí un nombre por vez, o traelos directo del ranking o del torneo anterior con los botones de al lado."},
+  {panel:"sorteo",sel:'[data-act="draw-auto"]',title:"Sortear el cuadro",text:"Con los inscriptos completos, sorteá automáticamente o armá el cuadro a mano si preferís elegir vos los cruces."},
+  {panel:"ranking",title:"Panel · Ranking",text:"Los puntos de cada torneo por jugador. Las flechas sirven para desempatar cuando dos quedan igualados."},
+  {panel:"ranking",sel:"[data-acat]",title:"Elegí la categoría",text:"Cada categoría tiene su propia tabla de puntos; cambiala acá arriba."},
+  {panel:"ranking",sel:'[data-act="add-r"]',title:"Agregar jugador",text:"Sumá jugadores nuevos al ranking de esta categoría desde acá."},
+  {panel:"resultados",title:"Panel · Resultados",text:"Cargá los scores partido a partido o en tabla. Si el cuadro salió del sorteo, los ganadores avanzan solos."},
+  {panel:"resultados",sel:"#resT",title:"Elegí torneo y categoría",text:"Los resultados se cargan torneo por torneo y categoría por categoría; elegilos acá arriba."},
+  {panel:"resultados",sel:"[data-resview]",title:"Un partido a la vez, o en tabla",text:"Elegí cómo preferís cargar los scores: de a un partido, o todos juntos en una tabla."},
+  {panel:"fotos",title:"Panel · Fotos",text:"Subí las fotos del club acá; se achican solas y podés marcarles un año para filtrarlas."},
+  {panel:"fotos",sel:"#upFotos",title:"Subir fotos",text:"Podés subir varias juntas. Después escribís una descripción y, si querés, el año de cada una."},
+  {panel:"club",title:"Panel · Ubicación y redes",text:"Dirección, mapa y redes sociales del club, que se muestran en el Inicio del sitio."},
+  {panel:"club",sel:'[data-bind="club.direccion"]',title:"Dirección del club",text:"Con la dirección alcanza para que se arme el mapa solo, con el botón \"Cómo llegar\" incluido."},
+  {panel:"club",sel:'[data-bind="club.redes.whatsapp"]',title:"Redes sociales",text:"Instagram, Facebook, WhatsApp, TikTok, YouTube o sitio web. Las que dejes vacías no se muestran."},
+  {panel:"datos",title:"Panel · Datos",text:"Exportar o importar una copia completa, subir/bajar de la nube y restaurar copias de seguridad automáticas."},
+  {panel:"datos",sel:'[data-act="export"]',title:"Exportar copia",text:"Descarga un archivo con todo lo de este club; te sirve para pasarlo a otra computadora o como respaldo."},
+  {panel:"datos",sel:'[data-act="bk-now"]',title:"Copias de seguridad",text:"La app ya guarda una copia sola antes de cada borrado. Este botón te deja guardar una copia extra ahora mismo."}
+];
+let tourSteps=null, tourIdx=0, tourResizeBound=false;
+function tourKey(rol){ return "liga:c:"+CLUB_ID+":tutorial:"+rol; }
+function tourSeen(rol){ try{ return !!localStorage.getItem(tourKey(rol)); }catch(e){ return true; } }
+function tourMarkSeen(rol){ try{ localStorage.setItem(tourKey(rol),"1"); }catch(e){} }
+function initTour(){
+  const fab=document.getElementById("tourFab");
+  if(fab){ fab.hidden=false; fab.onclick=()=>startTour(state.rol,true); }
+  if(!tourSeen(state.rol)) setTimeout(()=>startTour(state.rol,false),450);
+}
+function startTour(rol,fromFab){
+  tourIdx=0;
+  tourSteps=[{intro:true,rol}, ...(rol==="admin"?[...TOUR_PUBLICO_ADMIN,...TOUR_PANEL_ADMIN]:TOUR_PUBLICO_JUGADOR), {outro:true,rol}];
+  tourRender();
+  if(!tourResizeBound){ window.addEventListener("resize",()=>{ if(tourSteps) tourPosition(); }); tourResizeBound=true; }
+}
+function tourEnd(){
+  tourMarkSeen(state.rol); tourSteps=null;
+  const v=document.getElementById("tourVeil"); if(v) v.remove();
+  const s=document.getElementById("tourSpot"); if(s) s.remove();
+  const c=document.getElementById("tourCard"); if(c) c.remove();
+}
+function tourApplyStep(step){
+  if(step.nav!=null){ history.replaceState(null,"",location.pathname+location.search+"#"+step.nav); render(); }
+  else if(step.panel){ history.replaceState(null,"",location.pathname+location.search+"#admin"); state.adminTab=step.panel; render(); }
+}
+function tourTargetEl(step){
+  if(step.sel){ const el=document.querySelector(step.sel); if(el) return el; }
+  if(step.nav!=null){
+    const els=[...document.querySelectorAll(`#topnav a[href="#${step.nav}"],#tabnav a[href="#${step.nav}"]`)];
+    const t=els.find(el=>el.offsetParent)||els[0]; if(t) return t;
+  }
+  if(step.panel){ const t=document.querySelector(`.admin-tabs [data-atab="${step.panel}"]`); if(t) return t; }
+  return null;
+}
+function tourRender(){
+  if(!tourSteps) return;
+  const step=tourSteps[tourIdx];
+  if(!document.getElementById("tourVeil")){ const v=document.createElement("div"); v.className="tour-veil"; v.id="tourVeil"; document.body.appendChild(v); }
+  if(step.intro||step.outro){
+    const wel=step.intro;
+    const card=tourCardEl();
+    card.classList.add("center");
+    card.innerHTML=`<span class="tour-eyebrow">${wel?"Bienvenido a Circuito Tenis":"Listo"}</span>
+      <h3>${wel?"Así funciona esto 🎾":"Ya podés recorrer el sitio"}</h3>
+      <p>${wel
+        ? (step.rol==="admin"
+          ? "Te muestro cada pestaña del sitio y, después, cada sección del panel, con lo más importante de cada una. Son "+ (tourSteps.length-2) +" pasos y podés saltear cuando quieras."
+          : "Te muestro para qué sirve cada pestaña, con lo más importante de cada una. Son "+ (tourSteps.length-2) +" pasos y podés saltear cuando quieras.")
+        : "Si en algún momento querés repasarlo, tocá el botón \"?\" que va a quedar siempre disponible abajo."}</p>
+      <div class="tour-btns">${wel?`<button class="btn ghost sm" data-tour="skip">Ahora no</button><button class="btn sm" data-tour="next">Empezar</button>`:`<button class="btn sm" data-tour="end">Entendido</button>`}</div>`;
+    tourRemoveSpot();
+    bindTourButtons();
+    return;
+  }
+  tourApplyStep(step);
+  requestAnimationFrame(()=>requestAnimationFrame(tourPosition));
+}
+function tourCardEl(){
+  let card=document.getElementById("tourCard");
+  if(!card){ card=document.createElement("div"); card.className="tour-card"; card.id="tourCard"; document.body.appendChild(card); }
+  card.classList.remove("center");
+  return card;
+}
+function tourRemoveSpot(){ const s=document.getElementById("tourSpot"); if(s) s.remove(); }
+function tourPosition(){
+  if(!tourSteps) return;
+  const step=tourSteps[tourIdx];
+  const el=step.center?null:tourTargetEl(step);
+  const card=tourCardEl();
+  const n=tourSteps.length-2, i=tourIdx; // pasos "reales", sin contar intro/outro
+  const dots=Array.from({length:n},(_,k)=>`<span class="${k===i-1?"on":""}"></span>`).join("");
+  card.innerHTML=`<span class="tour-eyebrow">Paso ${i} de ${n}</span><h3>${esc(step.title)}</h3><p>${esc(step.text)}</p>
+    <div class="tour-dots">${dots}</div>
+    <div class="tour-btns">${i>1?`<button class="btn ghost sm" data-tour="prev">Atrás</button>`:""}
+      <button class="tour-skip" data-tour="skip">Saltar tour</button>
+      <button class="btn sm" data-tour="next">${i===n?"Terminar":"Siguiente"}</button></div>`;
+  bindTourButtons();
+  if(!el){ card.classList.add("center"); tourRemoveSpot(); return; }
+  el.scrollIntoView({block:"nearest",inline:"center",behavior:"auto"});
+  const r=el.getBoundingClientRect();
+  let spot=document.getElementById("tourSpot");
+  if(!spot){ spot=document.createElement("div"); spot.className="tour-spot"; spot.id="tourSpot"; document.body.appendChild(spot); }
+  spot.style.top=(r.top-6)+"px"; spot.style.left=(r.left-8)+"px"; spot.style.width=(r.width+16)+"px"; spot.style.height=(r.height+12)+"px";
+  const cw=Math.min(340,window.innerWidth-32), ch=card.offsetHeight||180;
+  let top, left=Math.min(Math.max(8,r.left+r.width/2-cw/2),window.innerWidth-cw-8);
+  if(r.top>window.innerHeight-r.height-ch-24) top=Math.max(8,r.top-ch-14); else top=Math.min(window.innerHeight-ch-8,r.bottom+14);
+  card.style.width=cw+"px"; card.style.top=top+"px"; card.style.left=left+"px";
+}
+function bindTourButtons(){
+  document.querySelectorAll("[data-tour]").forEach(b=>b.onclick=()=>{
+    const act=b.dataset.tour;
+    if(act==="skip"||act==="end"){ tourEnd(); return; }
+    if(act==="next"){ tourIdx++; if(tourIdx>=tourSteps.length){ tourEnd(); return; } tourRender(); return; }
+    if(act==="prev"){ tourIdx=Math.max(0,tourIdx-1); tourRender(); return; }
+  });
 }
 
 /* ================= Eventos ================= */

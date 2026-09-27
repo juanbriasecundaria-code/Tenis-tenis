@@ -1,6 +1,7 @@
 # Circuito Tenis — asistente para crear torneo (v4, más simple)
 
 ## Qué cambió en esta vuelta
+- **Tutorial de bienvenida**: la primera vez que alguien entra a un club como jugador o como administrador, aparece un recorrido guiado ("Bienvenido a Circuito Tenis 🎾") que va bloque por bloque de cada pestaña: mapa, novedades, "Seguí la liga", selectores de año/categoría, buscadores, etc. Al administrador además le muestra las 11 secciones del Panel con sus botones y campos clave. Queda guardado en el navegador para no repetirlo solo, y se puede volver a ver tocando el botón circular "?" de abajo a la derecha.
 - **Fechas con selector**: en el paso 1 del asistente ahora hay dos campos "Desde"/"Hasta" (calendario nativo) que arman solos el texto de fechas ("12 al 14 de octubre"); el texto sigue siendo editable a mano si preferís escribirlo distinto.
 - **"Traer los del torneo anterior"**: en Inscriptos y sorteo (asistente y pestaña normal) hay un botón nuevo, al lado de "Traer los del ranking", que carga la lista de inscriptos que jugó esa misma categoría en el torneo anterior. Útil cuando se repiten los mismos jugadores edición tras edición.
 - **"Siguiente categoría sin inscriptos ›"**: con torneos de varias categorías, este botón salta directo a la próxima categoría que todavía no tiene inscriptos cargados, sin tener que ir clickeando cada pestaña de categoría a mano.
