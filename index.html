@@ -391,10 +391,15 @@ svg.tchev{width:20px;height:20px;flex-shrink:0;transition:transform .18s;color:v
 .pchip .pclub{font-weight:500;margin-left:2px}
 .pcard{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);background:var(--surface);border:1px solid var(--line);border-radius:14px;overflow:hidden}
 .pc-main{padding:24px;display:flex;flex-direction:column;gap:6px;position:relative;overflow:hidden;
-  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='21' fill='none' stroke='white' stroke-opacity='.14' stroke-width='2'/%3E%3Cpath d='M13 15 Q32 32 13 49' fill='none' stroke='white' stroke-opacity='.2' stroke-width='2'/%3E%3Cpath d='M51 15 Q32 32 51 49' fill='none' stroke='white' stroke-opacity='.2' stroke-width='2'/%3E%3C/svg%3E");
-  background-size:74px 74px}
+  background:repeating-linear-gradient(135deg,color-mix(in srgb,var(--text) 6%,transparent) 0 1px,transparent 1px 26px)}
 .pc-main>*{position:relative;z-index:1}
 .pc-main h1{font-size:clamp(2.6rem,7vw,4.2rem)}
+.pc-ball{position:absolute;right:-40px;bottom:-100px;width:210px;height:210px;border-radius:50%;overflow:hidden;
+  background:color-mix(in srgb,var(--ball) 42%,var(--surface));opacity:.5;z-index:0;pointer-events:none}
+.pc-ball::before,.pc-ball::after{content:"";position:absolute;left:-24%;width:148%;height:74%;
+  border:7px solid color-mix(in srgb,var(--ball-ink) 65%,transparent);border-radius:50%;opacity:.6}
+.pc-ball::before{top:-38%;transform:rotate(16deg)}
+.pc-ball::after{bottom:-38%;transform:rotate(-16deg)}
 .pcard{position:relative}
 .pcard::after{content:"";position:absolute;left:0;right:0;bottom:0;height:2px;
   background:repeating-linear-gradient(90deg,var(--gold) 0 10px,transparent 10px 18px)}
@@ -409,11 +414,11 @@ svg.tchev{width:20px;height:20px;flex-shrink:0;transition:transform .18s;color:v
 .pc-table-row.cur b,.pc-table-row.cur span{color:var(--text)}
 @media (max-width:480px){.pc-table{grid-template-columns:4rem repeat(3,minmax(0,1fr))}.pc-table-row:not(.pc-table-h) span{font-size:1.05rem}}
 .pc-media{position:relative;background:var(--court-in);background-size:cover;background-position:center top;
-  display:grid;place-items:center;aspect-ratio:3/4;min-height:320px;transition:background-color .45s}
+  display:grid;place-items:center;min-height:320px;height:100%;transition:background-color .45s}
 .pc-media[style*="url"]::before{content:"";position:absolute;inset:0;background:linear-gradient(90deg,var(--surface),transparent 32%)}
 .pc-media-ph{display:grid;place-items:center;width:100%;height:100%;color:#fff;font-weight:850;font-stretch:66%;font-size:3.4rem}
 .pc-media-edit{position:absolute;left:14px;right:14px;bottom:14px;z-index:1;display:flex;flex-wrap:wrap;gap:8px}
-@media (max-width:640px){.pcard{grid-template-columns:1fr}.pc-media{aspect-ratio:3/4;min-height:280px}}
+@media (max-width:640px){.pcard{grid-template-columns:1fr}.pc-media{height:auto;aspect-ratio:3/4;min-height:280px}}
 .stats{display:grid;grid-template-columns:repeat(4,1fr);background:var(--surface);border:1px solid var(--line);border-radius:12px;overflow:hidden;margin-top:14px}
 .stat{padding:16px 18px}.stat + .stat{border-left:1px solid var(--line)}
 .stat b{display:block;font-stretch:66%;font-weight:900;font-size:2.3rem;line-height:1;font-variant-numeric:tabular-nums}
@@ -3167,7 +3172,7 @@ function vPartidos(){
     .map(([k,l,v])=>({l,ic:k,href:redHref(k,v)})).filter(r=>r.href);
   const contactoView = (!canContact && contactoLinks.length) ? `<div class="pc-contact where-social"><span class="lbl">Contacto</span>${contactoLinks.map(r=>`<a class="soc" href="${esc(r.href)}" target="_blank" rel="noopener noreferrer">${icon(r.ic)}${r.l}</a>`).join("")}</div>` : "";
   return `<section class="wrap page"><div class="page-tools">${yearSel()}</div>
-    <div class="pcard"><div class="pc-main">
+    <div class="pcard"><div class="pc-main"><span class="pc-ball" aria-hidden="true"></span>
         <h1 class="display">${esc(s.ap)}</h1><span class="sub">${esc(s.nom)}${s.nom?", ":""}Categoría ${esc(catName(p.cat))}${modNote()}${isProfile?' <span class="me-tag">Tu perfil</span>':""}${clubInfo?` <span class="pclub">${miniShieldHTML(clubInfo)}</span>`:""}</span>
       <div class="pc-actions">${isProfile?`<button class="btn ghost sm" data-act="unprofile">Dejar de usar como mi perfil</button>`
         :`<button class="btn sm" data-act="profile">Guardar como mi perfil</button>`}<button class="btn ghost sm" data-act="pick">Elegir ${otroJugador()}</button></div>
