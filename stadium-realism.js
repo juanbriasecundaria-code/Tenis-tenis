@@ -83,29 +83,75 @@ function stBrandTexture(text,bg,fg='#F4F2EA',subtitle=''){
     if(subtitle){g.font='500 28px Arial';g.fillText(subtitle,w/2,189,920);}
   });
 }
-function stVenueBoards(grp,V){
+// Layout derived from supplied model views; coordinates are visual estimates, not a survey.
+function stVenueBoards(grp,V,tiers){
   const g=new THREE.Group();g.name='Tournament courtside signage';grp.add(g);
-  const {mat,box,mesh}=stDetailKit(g),bg=V.roof==='ashe'?'#11366A':'#103C2C';
-  const textures=new Map();
-  const panel=(text,x,y,z,w,h,rotation,subtitle='')=>{
-    const k=text+'|'+subtitle;if(!textures.has(k))textures.set(k,stBrandTexture(text,bg,'#F6F3E9',subtitle));
-    const p=mesh(new THREE.PlaneGeometry(w,h),new THREE.MeshStandardMaterial({map:textures.get(k),roughness:.9}),x,y,z);p.rotation.y=rotation;p.castShadow=false;return p;
+  const {mat,box,mesh}=stDetailKit(g),ashe=V.roof==='ashe',rg=V.roof==='chatrier';
+  const bg=ashe?'#2485B2':'#17452E', wall=mat(ashe?0x2485B2:0x17452E,.92);
+  const panel=(text,x,y,z,w,h,rotation,color=bg)=>{
+    const p=mesh(new THREE.PlaneGeometry(w,h),new THREE.MeshStandardMaterial({map:stBrandTexture(text,color),roughness:.9}),x,y,z);p.rotation.y=rotation;p.castShadow=false;return p;
   };
-  if(V.roof!=='wimb'){
-    const names=V.roof==='chatrier'?['BNP PARIBAS','Emirates','LACOSTE','BNP PARIBAS','Renault']:['CHASE','Emirates','J.P. Morgan','AMERICAN EXPRESS','CHASE'];
-    for(const side of [-1,1])names.forEach((n,i)=>panel(n,(i-2)*6.65,.64,side*(ST_HZ-.035),5.4,.83,side<0?0:Math.PI,n==='Emirates'?'FLY BETTER':''));
-    for(const side of [-1,1])for(const [i,z] of [-5.8,0,5.8].entries())panel(names[i],side*(ST_HX-.035),.64,z,4.5,.83,side<0?Math.PI/2:-Math.PI/2);
+  if(ashe){
+    // Tall end walls, low sideline strips. Names legible at 7.6s and 84s in the supplied video.
+    for(const end of [-1,1]){
+      box(.22,3.25,ST_HZ*2,wall,end*(ST_HX+.05),1.625,0);
+      const rot=end<0?Math.PI/2:-Math.PI/2,x=end*(ST_HX-.075);
+      [[-6.5,'CHASE',3.2],[-2.2,'US OPEN',3.2],[2.4,'J.P. Morgan',3.7],[6.7,'Emirates Airline',4.4]].forEach(([z,t,w])=>panel(t,x,2.30,z,w,.74,rot));
+      for(const z of [-6,-2,2,6]){box(.025,.31,1.50,mat(0x111820),x,.38,z);}
+      panel('ROLEX',x,.92,7.1,1.1,.65,rot,'#17452E');
+    }
+    const sideNames=[[-14.6,'CHUBB',4.2],[-8.6,'IHG',3.6],[-2.2,'US OPEN',3.4],[4.4,'Spectrum',4.0],[10.0,'Deloitte.',3.9],[15.0,'MERCEDES-BENZ',4.5]];
+    for(const side of [-1,1])sideNames.forEach(([x,t,w])=>panel(t,x,.52,side*(ST_HZ-.055),w,.58,side<0?0:Math.PI));
+    const T=tiers[1],z=ST_HZ+T.o0-.10;
+    for(const side of [-1,1]){
+      panel('US OPEN',0,T.top+.70,side*z,29,.72,side<0?0:Math.PI,'#168DC1');
+      [[-15,'CHASE'],[-7.5,'AMERICAN EXPRESS'],[0,'ARTHUR ASHE STADIUM'],[8,'Emirates Airline'],[16,'POLO RALPH LAUREN']].forEach(([x,t])=>panel(t,x,T.base-1.35,side*z,6.5,.62,side<0?0:Math.PI,'#102E50'));
+    }
+  }else if(rg){
+    // Model has tall green ends, concrete sides and low discrete advertising panels.
+    for(const end of [-1,1]){
+      box(.22,3.15,ST_HZ*2,wall,end*(ST_HX+.04),1.575,0);
+      panel('ROLAND-GARROS',end*(ST_HX-.08),1.85,0,4.2,1.10,end<0?Math.PI/2:-Math.PI/2);
+    }
+    const concrete=mat(0xB5B3A9,.98);
+    for(const side of [-1,1]){
+      box(2*ST_HX,1.30,.18,concrete,0,1.50,side*(ST_HZ+.08));
+      for(const x of [-15,-10,-5,5,10,15]){
+        const board=box(4.75,.64,.18,wall,x,.38,side*(ST_HZ-.16));board.rotation.x=side*.10;
+      }
+      // No fictitious sponsors: text in the source is the model vendor's placeholder.
+    }
   }
-  // Wimbledon keeps uninterrupted dark green walls; branding is concentrated at the clock.
-  for(const side of [-1,1]){
-    const clock=new THREE.Group();clock.position.set(side*15,1.05,-ST_HZ+.10);g.add(clock);
-    const k=stDetailKit(clock),frame=k.mat(0xC2A46B,.32,.7),green=k.mat(0x113B2B);
-    k.box(1.65,1.43,.10,green,0,.22,0);
-    const dial=stCanvasTex(512,512,(c,w,h)=>{c.fillStyle='#FBF8E9';c.beginPath();c.arc(256,256,244,0,Math.PI*2);c.fill();c.strokeStyle='#294237';for(let i=0;i<60;i++){const a=i*Math.PI/30;c.lineWidth=i%5?2:6;c.beginPath();c.moveTo(256+Math.sin(a)*(i%5?225:205),256-Math.cos(a)*(i%5?225:205));c.lineTo(256+Math.sin(a)*235,256-Math.cos(a)*235);c.stroke();}c.fillStyle='#315644';c.font='bold 31px Georgia';c.textAlign='center';c.fillText('ROLEX',256,174);c.strokeStyle='#263E31';c.lineCap='round';c.lineWidth=10;c.beginPath();c.moveTo(256,256);c.lineTo(179,205);c.moveTo(256,256);c.lineTo(356,119);c.stroke();c.fillStyle='#BA9651';c.beginPath();c.arc(256,256,10,0,Math.PI*2);c.fill();});
-    const ring=k.mesh(new THREE.TorusGeometry(.46,.026,8,48),frame,0,.35,.062);
-    k.mesh(new THREE.CircleGeometry(.439,48),new THREE.MeshStandardMaterial({map:dial,roughness:.5}),0,.35,.065);
-    k.mesh(new THREE.PlaneGeometry(1.28,.31),new THREE.MeshStandardMaterial({map:stBrandTexture('ROLEX',bg,'#D9BE83'),roughness:.7}),0,-.30,.061);
+}
+
+function stVenueLandmarks(grp,V,tiers){
+  if(V.roof!=='wimb')return;
+  const g=new THREE.Group();g.name='Centre Court end pavilion';grp.add(g);
+  const {mat,box,rod}=stDetailKit(g),green=mat(0x284D34),stone=mat(0xADA995),wood=mat(0x735134),glass=mat(0x142C21);
+  // Raised central enclosure visible behind the far baseline in the supplied Wimbledon views.
+  const x=ST_HX+1.4;
+  box(3.5,4.4,10.4,green,x,2.2,0);box(3.9,.22,10.8,stone,x,4.5,0);
+  for(const z of [-3.6,-1.8,0,1.8,3.6]){
+    box(.04,.62,1.12,glass,x-1.77,2.82,z);
+    for(const dz of [-.35,0,.35])rod([x-1.80,2.53,z+dz],[x-1.80,3.12,z+dz],.015,wood);
   }
+  box(.20,1.0,10.6,green,x-1.75,5.05,0);
+  for(const z of [-5.2,5.2])box(3.7,1.15,.16,wood,x,5.12,z);
+  for(let row=0;row<4;row++)for(let col=0;col<12;col++){
+    box(.51,.12,.48,mat(0x57876E),x-.8+row*.65,4.75+row*.25,(col-5.5)*.72);
+    box(.10,.48,.48,green,x-.51+row*.65,4.98+row*.25,(col-5.5)*.72);
+  }
+}
+
+function stVenueScreens(V,tiers,scr){
+  const last=tiers[tiers.length-1];
+  if(V.roof==='ashe'){
+    // Screens centered beneath roof trusses, not on the four bowl corners.
+    for(const end of [-1,1])scr(end*(ST_HX+last.o0+2),last.top+1.1,0,7.2,5.0,false);
+  }else if(V.roof==='wimb'){
+    scr(ST_HX+.82,3.0,-7.55,3.8,2.4,false);
+  }
+  // No video screens can be located confidently in the supplied Chatrier orbit.
 }
 
 function stCourtsideFurniture(grp,V){
@@ -136,14 +182,25 @@ function stCourtsideFurniture(grp,V){
   box(.245,.004,.155,mat(0x68878B,.33),.13,2.499,uz+.49).rotation.x=-.16;
   rod([-.25,2.46,uz+.46],[-.25,2.65,uz+.48],.007,rubber);rod([-.25,2.65,uz+.48],[-.12,2.72,uz+.52],.007,rubber);
   mesh(new THREE.SphereGeometry(.017,8,6),rubber,-.12,2.72,uz+.52);
-  const banner=mesh(new THREE.PlaneGeometry(.77,1.02),new THREE.MeshStandardMaterial({map:stBrandTexture(V.roof==='wimb'?'WIMBLEDON':V.roof==='chatrier'?'Emirates':'US OPEN',V.roof==='ashe'?'#173E75':'#153F2F'),roughness:.86}),0,.88,uz+.54);
+  const banner=mesh(new THREE.PlaneGeometry(.77,1.02),new THREE.MeshStandardMaterial({map:stBrandTexture(V.roof==='wimb'?'':V.roof==='chatrier'?'':'US OPEN',V.roof==='ashe'?'#173E75':'#153F2F'),roughness:.86}),0,.88,uz+.54);
   // Slatted two-seat benches, independent armrests and contoured backs.
   for(const sign of [-1,1]){
     const x=sign*3.5,z=-7.78;
     for(const dx of [-.85,.85])for(const dz of [-.22,.23]){rod([x+dx,.05,z+dz],[x+dx,.52,z+dz],.023,metal);box(.09,.05,.09,rubber,x+dx,.025,z+dz);}
+    if(V.roof==='wimb'){
+      for(const dx of [-.58,.58]){
+        round(.51,.055,.49,.025,seat,x+dx,.48,z);
+        round(.51,.32,.045,.035,seat,x+dx,.83,z-.25);
+        for(const side of [-1,1]){
+          rod([x+dx+side*.23,.05,z-.28],[x+dx+side*.23,.91,z-.24],.016,metal);
+          rod([x+dx+side*.23,.05,z+.26],[x+dx+side*.23,.54,z-.18],.016,metal);
+        }
+      }
+    }else{
     for(let j=0;j<5;j++)round(2.12,.06,.078,.018,seat,x,.48,z-.22+j*.11);
     for(let j=0;j<4;j++)round(2.12,.10,.058,.026,seat,x,.66+j*.105,z-.27-j*.02);
     for(const dx of [-1.02,0,1.02]){rod([x+dx,.48,z+.18],[x+dx,.76,z+.18],.023,green);rod([x+dx,.76,z+.18],[x+dx,.78,z-.25],.028,green);}
+    }
     // Soft towel draped over the back and cushion, with a contrasting woven border.
     const tg=new THREE.PlaneGeometry(.39,.87,8,18),p=tg.attributes.position;
     for(let i=0;i<p.count;i++){const u=p.getX(i),v=p.getY(i)+.435;p.setXYZ(i,u,.58+Math.min(v,.39),v<.39?.04-v*.74:-.25-(v-.39)*.18);p.setY(i,p.getY(i)+.014*Math.sin(u*45+v*7));}tg.computeVertexNormals();

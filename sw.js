@@ -3,7 +3,7 @@
    - Íconos, manifest y tipografías: se guardan y se actualizan solos.
    - Firebase/Firestore NO se toca: los datos se siguen sincronizando por su cuenta.
    Cuando cambies este archivo, subí el número de VERSION para limpiar lo guardado. */
-const VERSION = "v6-courtside-realism";
+const VERSION = "v8-reference-layouts";
 const CACHE = "torneos-" + VERSION;
 const PRECACHE = ["./", "vendor/three-r128.min.js", "stadium-realism.js", "assets/spectators-photo.png", "assets/athlete-skin.png", "assets/crowd-summer.webp", "assets/crowd-wimb.webp", "assets/crowd-usopen.webp", "manifest.webmanifest", "icon-192.png", "icon-512.png", "icon-maskable-512.png", "apple-touch-icon.png"];
 const ESPERA_RED = 3500; // ms antes de mostrar la copia guardada si la red no contesta
